@@ -1,6 +1,11 @@
 import { getPool } from '../../config/db';
 import Logger from '../../config/logger';
 import {ResultSetHeader} from "mysql2";
+import randToken from 'rand-token';
+
+const randomToken = async (x: number) : Promise<any> =>{
+    return randToken.generate(x);
+};
 
 const register = async(email:string, firstname:string, lastname:string, password:string): Promise<ResultSetHeader> =>{
     Logger.info(`Adding user to the database`);
@@ -15,10 +20,46 @@ const register = async(email:string, firstname:string, lastname:string, password
     else {
         const [result] = await conn.query(query, [[[email], [firstname], [lastname], [password]]]);
         Logger.info(`Testing`);
-        // Line 16 breaks the code
         await conn.release();
         return result;
     }
 };
+const login =async(email:string, password:string) : Promise<any> => {
+    const conn = await getPool().getConnection();
+    const token = await randomToken(32);
+    let query = 'select id, password from user where email = ?';
+    const [users]= await conn.query(query,[email]);
+    if (users[0]==null){
+        await conn.release();
+        return null;
+    } else if (password.localeCompare(users[0].password)){
+        await conn.release();
+        return null;
+    }
+    else{
+        query='update user set auth_token =? where id =? and email =?';
+        const[result]= await conn.query(query, [token, users[0].id, email]);
+        await conn.release();
+        return result;
+    }
+}
 
-export{register}
+const logout = async(token:string) : Promise<any> =>{
+    // tslint:disable-next-line:no-console
+    console.log(token)
+    Logger.info(`Logging out user`);
+    const conn = await getPool().getConnection();
+    let query = 'select id from user where auth_token = ?';
+    const [users] = await conn.query(query, [[token]]);
+    if (users[0]==null){
+        Logger.info(`Reach this part?${token}`);
+        await conn.release();
+        return null;
+    }
+    query = 'update user set auth_token = null where auth_token = ?';
+    const [result] = await conn.query(query, [[token]]);
+    await conn.release();
+    return result;
+}
+
+export{register,login,logout}

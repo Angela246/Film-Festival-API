@@ -1,9 +1,11 @@
 import {Request, Response} from "express";
 import Logger from "../../config/logger";
+import * as usersImage from '../models/user.image.server.model';
 
 
 const getImage = async (req: Request, res: Response): Promise<void> => {
     try{
+        const image = await usersImage.getImageString(req.body.id)
         // Your code goes here
         res.statusMessage = "Not Implemented Yet!";
         res.status(501).send();

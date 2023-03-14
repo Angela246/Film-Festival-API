@@ -4,6 +4,16 @@ import * as schema from "../resources/schemas.json"
 import * as users from '../models/user.server.model';
 import Ajv from 'ajv';
 const ajv = new Ajv({removeAdditional:'all',strict:false});
+const validateEmail = async(email:string): Promise<any> =>{
+    const emailRegex=/(([a-z]|[0-9])+(([.])([a-z]|[0-9])+)*([@])([a-z]|[0-9])+(([.])([a-z]|[0-9])+)+)/;
+    if (email.match(emailRegex))
+    {
+        return true;
+    }
+    else{
+        return false;
+    }
+}
 const validate = async (schemas:object,data:any)=>{
     try{
         const validator = ajv.compile(schemas);
@@ -21,9 +31,15 @@ const validate = async (schemas:object,data:any)=>{
 const register = async (req: Request, res: Response): Promise<void> => {
     Logger.http(`Registering user with email: ${req.body.email}`)
     const validation = await validate( schema.user_register,req.body);
+    const emailValidation = await validateEmail(req.body.email)
 
     if (validation!==true){
         res.statusMessage=`Bad Request: ${validation.toString()}`;
+        res.status(400).send();
+        return;
+    }
+    else if (emailValidation ===false){
+        res.statusMessage='Bad Request: data/email must match format "email"'
         res.status(400).send();
         return;
     }
@@ -53,11 +69,24 @@ const login = async (req: Request, res: Response): Promise<void> => {
         res.status(400).send();
         return;
     }
-    try{
-        // Your code goes here
-        res.statusMessage = "Not Implemented Yet!";
-        res.status(501).send();
+    const emailValidation = await validateEmail(req.body.email);
+     if (emailValidation ===false){
+        res.statusMessage='Bad Request: data/email must match format "email"'
+        res.status(400).send();
         return;
+    }try{
+        Logger.http(`Passed validation for email and password`);
+
+        const result = await users.login(req.body.email, req.body.password);
+        if (result == null){
+            res.statusMessage='Not Authorised. Incorrect email/password'
+            res.status(401).send();
+            return;
+        }
+        else {
+            res.status(200).send();
+            return;
+        }
     } catch (err) {
         Logger.error(err);
         res.statusMessage = "Internal Server Error";
@@ -65,13 +94,12 @@ const login = async (req: Request, res: Response): Promise<void> => {
         return;
     }
 }
-
 const logout = async (req: Request, res: Response): Promise<void> => {
-
+    const token = req.header('X-Authorization');
     try{
-        // Your code goes here
-        res.statusMessage = "Not Implemented Yet!";
-        res.status(501).send();
+        const response = await users.logout(token);
+        res.header('X-Authorization', token);
+        res.status(200).send();
         return;
     } catch (err) {
         Logger.error(err);
@@ -82,6 +110,7 @@ const logout = async (req: Request, res: Response): Promise<void> => {
 }
 
 const view = async (req: Request, res: Response): Promise<void> => {
+    const token = req.header('X-Authorization');
     try{
         // Your code goes here
         res.statusMessage = "Not Implemented Yet!";
