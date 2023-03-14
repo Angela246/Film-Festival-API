@@ -60,7 +60,7 @@ const register = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 };
-
+// Doesn't check if email is in the database
 const login = async (req: Request, res: Response): Promise<void> => {
     Logger.http(`Logging user with: ${req.body.email}`)
     const validation =await validate (schema.user_login,req.body);
@@ -78,12 +78,14 @@ const login = async (req: Request, res: Response): Promise<void> => {
         Logger.http(`Passed validation for email and password`);
 
         const result = await users.login(req.body.email, req.body.password);
+        Logger.http(`Logging user with token: ${result}`)
         if (result == null){
             res.statusMessage='Not Authorised. Incorrect email/password'
             res.status(401).send();
             return;
         }
         else {
+            res.header('X-Authorization',result)
             res.status(200).send();
             return;
         }
@@ -98,7 +100,7 @@ const logout = async (req: Request, res: Response): Promise<void> => {
     const token = req.header('X-Authorization');
     try{
         const response = await users.logout(token);
-        res.header('X-Authorization', token);
+        res.header('X-Authorization',null);
         res.status(200).send();
         return;
     } catch (err) {

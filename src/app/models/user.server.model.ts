@@ -45,19 +45,17 @@ const login =async(email:string, password:string) : Promise<any> => {
 }
 
 const logout = async(token:string) : Promise<any> =>{
-    // tslint:disable-next-line:no-console
-    console.log(token)
     Logger.info(`Logging out user`);
     const conn = await getPool().getConnection();
     let query = 'select id from user where auth_token = ?';
-    const [users] = await conn.query(query, [[token]]);
+    const [users] = await conn.query(query, [token]);
     if (users[0]==null){
         Logger.info(`Reach this part?${token}`);
         await conn.release();
         return null;
     }
     query = 'update user set auth_token = null where auth_token = ?';
-    const [result] = await conn.query(query, [[token]]);
+    const [result] = await conn.query(query, [token]);
     await conn.release();
     return result;
 }
