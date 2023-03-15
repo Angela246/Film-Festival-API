@@ -1,11 +1,6 @@
 import { getPool } from '../../config/db';
 import Logger from '../../config/logger';
 import {ResultSetHeader} from "mysql2";
-import randToken from 'rand-token';
-
-const randomToken = async (x: number) : Promise<any> =>{
-    return randToken.generate(x);
-};
 
 const register = async(email:string, firstname:string, lastname:string, password:string): Promise<ResultSetHeader> =>{
     Logger.info(`Adding user to the database`);
@@ -24,9 +19,8 @@ const register = async(email:string, firstname:string, lastname:string, password
         return result;
     }
 };
-const login =async(email:string, password:string) : Promise<any> => {
+const login =async(email:string, password:string, token:string) : Promise<any> => {
     const conn = await getPool().getConnection();
-    const token = await randomToken(32);
     let query = 'select id, password from user where email = ?';
     const [users]= await conn.query(query,[email]);
     if (users[0]==null){
@@ -47,10 +41,10 @@ const login =async(email:string, password:string) : Promise<any> => {
 const logout = async(token:string) : Promise<any> =>{
     Logger.info(`Logging out user`);
     const conn = await getPool().getConnection();
-    let query = 'select id from user where auth_token = ?';
+    let query = 'select * from user where auth_token = ?';
     const [users] = await conn.query(query, [token]);
     if (users[0]==null){
-        Logger.info(`Reach this part?${token}`);
+        Logger.info(`Reach this part? ${token}`);
         await conn.release();
         return null;
     }
@@ -59,5 +53,13 @@ const logout = async(token:string) : Promise<any> =>{
     await conn.release();
     return result;
 }
+const view = async(id:number): Promise<any>=>{
+    Logger.info(`Viewing user details`);
+    const conn = await getPool().getConnection();
+    const query= 'select email,first_name,lastname,auth-token from user where id =?'
+    const[users]=  await conn.query(query, [id]);
+    if (users[0].auth_token===null){
+    }
+}
 
-export{register,login,logout}
+export{register,login,logout, view}

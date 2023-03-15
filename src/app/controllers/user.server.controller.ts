@@ -4,6 +4,12 @@ import * as schema from "../resources/schemas.json"
 import * as users from '../models/user.server.model';
 import Ajv from 'ajv';
 const ajv = new Ajv({removeAdditional:'all',strict:false});
+
+import randToken from 'rand-token';
+
+const randomToken = async (x: number) : Promise<any> =>{
+    return randToken.generate(x);
+};
 const validateEmail = async(email:string): Promise<any> =>{
     const emailRegex=/(([a-z]|[0-9])+(([.])([a-z]|[0-9])+)*([@])([a-z]|[0-9])+(([.])([a-z]|[0-9])+)+)/;
     if (email.match(emailRegex))
@@ -63,6 +69,7 @@ const register = async (req: Request, res: Response): Promise<void> => {
 // Doesn't check if email is in the database
 const login = async (req: Request, res: Response): Promise<void> => {
     Logger.http(`Logging user with: ${req.body.email}`)
+    const token = await randomToken(32);
     const validation =await validate (schema.user_login,req.body);
     if (validation!==true){
         res.statusMessage=`Bad Request: ${validation.toString()}`;
@@ -77,15 +84,14 @@ const login = async (req: Request, res: Response): Promise<void> => {
     }try{
         Logger.http(`Passed validation for email and password`);
 
-        const result = await users.login(req.body.email, req.body.password);
-        Logger.http(`Logging user with token: ${result}`)
+        const result = await users.login(req.body.email, req.body.password,token);
+        Logger.http(`Logging user with token: ${token}`)
         if (result == null){
             res.statusMessage='Not Authorised. Incorrect email/password'
             res.status(401).send();
             return;
         }
         else {
-            res.header('X-Authorization',result)
             res.status(200).send();
             return;
         }
@@ -97,10 +103,10 @@ const login = async (req: Request, res: Response): Promise<void> => {
     }
 }
 const logout = async (req: Request, res: Response): Promise<void> => {
-    const token = req.header('X-Authorization');
+    const token= req.header("X-Authorization");
+    Logger.http(`testing token: ${token}`);
     try{
         const response = await users.logout(token);
-        res.header('X-Authorization',null);
         res.status(200).send();
         return;
     } catch (err) {
@@ -110,9 +116,9 @@ const logout = async (req: Request, res: Response): Promise<void> => {
         return;
     }
 }
-
 const view = async (req: Request, res: Response): Promise<void> => {
     const token = req.header('X-Authorization');
+    Logger.http(`Viewing user with token :${token}`);
     try{
         // Your code goes here
         res.statusMessage = "Not Implemented Yet!";
