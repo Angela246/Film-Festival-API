@@ -52,7 +52,7 @@ const register = async (req: Request, res: Response): Promise<void> => {
     try {
             const result = await users.register(req.body.email,req.body.firstName,req.body.lastName,req.body.password);
             if (result!=null){
-                res.status (200).send();
+                res.status (200).send({userId :result});
                 return;
             }
             else{
@@ -83,17 +83,15 @@ const login = async (req: Request, res: Response): Promise<void> => {
         return;
     }try{
         Logger.http(`Passed validation for email and password`);
-
         const result = await users.login(req.body.email, req.body.password,token);
-        Logger.http(`Logging user with token: ${token}`)
         if (result == null){
             res.statusMessage='Not Authorised. Incorrect email/password'
             res.status(401).send();
             return;
         }
         else {
-            res.status(200).send();
-            return;
+            res.status(200).send(result);
+            return token;
         }
     } catch (err) {
         Logger.error(err);
@@ -104,7 +102,6 @@ const login = async (req: Request, res: Response): Promise<void> => {
 }
 const logout = async (req: Request, res: Response): Promise<void> => {
     const token= req.header("X-Authorization");
-    Logger.http(`testing token: ${token}`);
     try{
         const response = await users.logout(token);
         res.status(200).send();
@@ -118,7 +115,7 @@ const logout = async (req: Request, res: Response): Promise<void> => {
 }
 const view = async (req: Request, res: Response): Promise<void> => {
     const token = req.header('X-Authorization');
-    Logger.http(`Viewing user with token :${token}`);
+    const response = await users.view(req.body.id)
     try{
         // Your code goes here
         res.statusMessage = "Not Implemented Yet!";

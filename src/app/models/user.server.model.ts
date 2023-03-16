@@ -16,7 +16,7 @@ const register = async(email:string, firstname:string, lastname:string, password
         const [result] = await conn.query(query, [[[email], [firstname], [lastname], [password]]]);
         Logger.info(`Testing`);
         await conn.release();
-        return result;
+        return result.insertId;
     }
 };
 const login =async(email:string, password:string, token:string) : Promise<any> => {
@@ -34,7 +34,7 @@ const login =async(email:string, password:string, token:string) : Promise<any> =
         query='update user set auth_token =? where id =? and email =?';
         const[result]= await conn.query(query, [token, users[0].id, email]);
         await conn.release();
-        return result;
+        return {userId:users[0].id, token};
     }
 }
 
@@ -58,8 +58,7 @@ const view = async(id:number): Promise<any>=>{
     const conn = await getPool().getConnection();
     const query= 'select email,first_name,lastname,auth-token from user where id =?'
     const[users]=  await conn.query(query, [id]);
-    if (users[0].auth_token===null){
-    }
+
 }
 
 export{register,login,logout, view}
