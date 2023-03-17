@@ -142,8 +142,20 @@ const view = async (req: Request, res: Response): Promise<void> => {
 
 const update = async (req: Request, res: Response): Promise<void> => {
     const token = req.header('X-Authorization');
+    const validation =await validate (schema.user_login,req.body);
+    if (validation!==true){
+        res.statusMessage=`Bad Request: ${validation.toString()}`;
+        res.status(400).send();
+        return;
+    }
     try{
-        // const response = await users.update(req.params.id, token, req.body);
+        const response = await users.update(req.params.id, token, req.body);
+
+        if (response=== 401){
+            res.statusMessage= "Unauthorized or Invalid currentPassword"
+            res.status(401).send();
+            return;
+        }
         // Your code goes here
         res.statusMessage = "Not Implemented Yet!";
         res.status(501).send();

@@ -1,6 +1,7 @@
 import { getPool } from '../../config/db';
 import Logger from '../../config/logger';
 import {ResultSetHeader} from "mysql2";
+import * as passwords from '../middleware/password.hash';
 
 const register = async(email:string, firstname:string, lastname:string, password:string): Promise<ResultSetHeader> =>{
     Logger.info(`Adding user to the database`);
@@ -9,6 +10,8 @@ const register = async(email:string, firstname:string, lastname:string, password
     const emailQuery ='select * from user where email =?';
     const[existEmail]=await conn.query(emailQuery,[email]);
     if (existEmail[0]==null){
+        password= await passwords.hash(password)
+
         const [result] = await conn.query(query, [[[email], [firstname], [lastname], [password]]]);
         await conn.release();
         return result.insertId;
@@ -73,9 +76,16 @@ const view = async(id:string, token:string): Promise<any>=>{
     }
 }
 
-// const update = async(id:string, token:string): Promise<any>=>{
-//
-// }
+const update = async(id:string, token:string, body:any ): Promise<any>=>{
+    const conn = await getPool().getConnection();
+    const query = 'select auth_token, password from user where id =?'
+    const[result]=  await conn.query(query, [id]);
+    body.password=await passwords.hash(body.password)
+    if (result[0].password !== body.password || result[0].auth_token == null || result[0].auth_token !== token){
+        return 401;
+    }
+
+}
 
 
-export{register,login,logout, view}
+export{register,login,logout, view,update}

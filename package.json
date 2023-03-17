@@ -13,7 +13,9 @@
   "author": "Morgan English",
   "license": "ISC",
   "dependencies": {
+    "@types/bcrypt": "^5.0.0",
     "ajv": "^8.12.0",
+    "bcrypt": "^5.1.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "mime": "^3.0.0",
