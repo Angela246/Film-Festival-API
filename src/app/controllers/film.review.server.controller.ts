@@ -47,10 +47,25 @@ const addReview = async (req: Request, res: Response): Promise<void> => {
     }
     try{
         const result = await reviews.addReviews(req.body.rating, req.body.review, req.params.id,token);
-        // Your code goes here
-        res.statusMessage = "Not Implemented Yet!";
-        res.status(501).send();
-        return;
+        if (result ===401){
+            res.statusMessage = "Unauthorized";
+            res.status(401).send();
+            return;
+        }
+        else if (result===404){
+            res.statusMessage = "Not Found. No film found with id";
+            res.status(404).send();
+            return;
+        }
+
+        else if (result ===403){
+            res.statusMessage = "Forbidden. Cannot review your own film, or cannot post a review on a film that has not yet released";
+            res.status(403).send();
+            return;
+        }
+        res.statusMessage="Created";
+        res.status(201).send();
+
     } catch (err) {
         Logger.error(err);
         res.statusMessage = "Internal Server Error";
