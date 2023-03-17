@@ -53,12 +53,28 @@ const logout = async(token:string) : Promise<any> =>{
     await conn.release();
     return result;
 }
-const view = async(id:number): Promise<any>=>{
+const view = async(id:string, token:string): Promise<any>=>{
     Logger.info(`Viewing user details`);
     const conn = await getPool().getConnection();
-    const query= 'select email,first_name,lastname,auth-token from user where id =?'
+    const query= 'select email,first_name,last_name,auth_token from user where id =?'
     const[users]=  await conn.query(query, [id]);
+    if (users[0] ==null){
+        await conn.release();
+        return null;
+    }
+    else if (users[0].auth_token!=null && users[0].auth_token===token){
+        await conn.release();
+        return {email:users[0].email};
+    }
+    else if (users[0].auth_token==null ){
+        await conn.release();
+        return {firstName: users[0].first_name, lastName: users[0].last_name};
+    }
+}
+
+const update = async(id:string, token:string): Promise<any>=>{
 
 }
 
-export{register,login,logout, view}
+
+export{register,login,logout, view,update}

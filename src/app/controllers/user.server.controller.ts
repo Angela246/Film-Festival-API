@@ -115,12 +115,18 @@ const logout = async (req: Request, res: Response): Promise<void> => {
 }
 const view = async (req: Request, res: Response): Promise<void> => {
     const token = req.header('X-Authorization');
-    const response = await users.view(req.body.id)
     try{
-        // Your code goes here
-        res.statusMessage = "Not Implemented Yet!";
-        res.status(501).send();
-        return;
+        Logger.http(`Viewing user with id: ${req.params.id}`)
+        const response = await users.view(req.params.id,token);
+        if (response == null){
+            res.statusMessage=("Not Found. No user with specified ID");
+            res.status(404).send();
+            return;
+        }
+        else {
+            res.status(200).send(response);
+            return;
+        }
     } catch (err) {
         Logger.error(err);
         res.statusMessage = "Internal Server Error";
@@ -131,7 +137,9 @@ const view = async (req: Request, res: Response): Promise<void> => {
 
 
 const update = async (req: Request, res: Response): Promise<void> => {
+    const token = req.header('X-Authorization');
     try{
+        // const response = await users.update(req.params.id, token, req.body);
         // Your code goes here
         res.statusMessage = "Not Implemented Yet!";
         res.status(501).send();
