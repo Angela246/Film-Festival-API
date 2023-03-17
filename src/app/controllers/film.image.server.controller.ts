@@ -15,7 +15,6 @@ const getImage = async (req: Request, res: Response): Promise<void> => {
         return;
     }
 }
-
 const setImage = async (req: Request, res: Response): Promise<void> => {
     try{
         // Your code goes here

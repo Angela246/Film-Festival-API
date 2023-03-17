@@ -6,17 +6,15 @@ const register = async(email:string, firstname:string, lastname:string, password
     Logger.info(`Adding user to the database`);
     const conn = await getPool().getConnection();
     const query = 'insert into user (email, first_name,last_name, password) values ( ? )';
-    const emailQuery ='select * from user where email =?'
+    const emailQuery ='select * from user where email =?';
     const[existEmail]=await conn.query(emailQuery,[email]);
-    if (existEmail.length>0){
-        await conn.release();
-        return null;
-    }
-    else {
+    if (existEmail[0]==null){
         const [result] = await conn.query(query, [[[email], [firstname], [lastname], [password]]]);
-        Logger.info(`Testing`);
         await conn.release();
         return result.insertId;
+    }
+    else {
+        return null;
     }
 };
 const login =async(email:string, password:string, token:string) : Promise<any> => {
@@ -72,9 +70,9 @@ const view = async(id:string, token:string): Promise<any>=>{
     }
 }
 
-const update = async(id:string, token:string): Promise<any>=>{
+// const update = async(id:string, token:string): Promise<any>=>{
+//
+// }
 
-}
 
-
-export{register,login,logout, view,update}
+export{register,login,logout, view}

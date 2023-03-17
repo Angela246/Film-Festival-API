@@ -52,8 +52,7 @@ const register = async (req: Request, res: Response): Promise<void> => {
     try {
             const result = await users.register(req.body.email,req.body.firstName,req.body.lastName,req.body.password);
             if (result!=null){
-                res.status (200).send({userId :result});
-                return;
+                res.status (201).send({userId :result});
             }
             else{
                 res.status(403).send("Forbidden. Email already in use");
