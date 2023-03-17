@@ -1,9 +1,11 @@
 import {Request, Response} from "express";
 import Logger from "../../config/logger";
+import * as film from "../models/film.server.model";
 
 
 const viewAll = async (req: Request, res: Response): Promise<void> => {
     try{
+        // const result = await film.viewAllFilm(req.query);
         // Your code goes here
         res.statusMessage = "Not Implemented Yet!";
         res.status(501).send();

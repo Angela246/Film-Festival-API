@@ -5,7 +5,7 @@ import Logger from "../../config/logger";
 
 const getImageString = async (id: string) : Promise<any> => {
     const conn = await getPool().getConnection();
-    const query = 'SELECT image_filename FROM user WHERE id = ?';
+    const query = 'select image_filename from user where id = ?';
     const [ result ] = await conn.query( query, [ id ] );
     if (result[0].image_filename==null||result[0]==null){
         conn.release();
