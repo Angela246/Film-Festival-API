@@ -103,6 +103,11 @@ const logout = async (req: Request, res: Response): Promise<void> => {
     const token= req.header("X-Authorization");
     try{
         const response = await users.logout(token);
+
+        if (response == null){
+            res.statusMessage = "Unauthorized. Cannot log out if you are not authenticated";
+            res.status(401).send();
+        }
         res.status(200).send();
         return;
     } catch (err) {

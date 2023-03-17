@@ -38,6 +38,9 @@ const login =async(email:string, password:string, token:string) : Promise<any> =
 
 const logout = async(token:string) : Promise<any> =>{
     Logger.info(`Logging out user`);
+    if (token == null){
+        return null;
+    }
     const conn = await getPool().getConnection();
     let query = 'select * from user where auth_token = ?';
     const [users] = await conn.query(query, [token]);

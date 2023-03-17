@@ -24,18 +24,52 @@ const setImageString = async (id: string,image:any, token:string, contentType:st
         return 401;
     }
     const conn = await getPool().getConnection();
-    const query ='select image_filename, auth_token from user where id =?'
+    let query ='select image_filename, auth_token from user where id =?'
     const [result] = await conn.query(query, [id]);
     if (result[0]==null){
+        conn.release();
         return 404;
     }
     else if (result[0].auth_token !== token){
+        conn.release();
         return 403;
     }
     const extension = contentType.split("/");
     const imageType= extension[1];
 
+    if (imageType!=="jpeg"&&imageType!=="jpg"&&imageType !=="png"&&imageType !=="gif"){
+        conn.release();
+        return 400;
+    }
+    const imageName= `user_${id}.${imageType}`;
+    query= 'update user set image_filename = ? where id =?';
+    const [updateImage] = await conn.query(query,[imageName,id]);
+    // Image not storing in here
+    fs.writeFileSync(`./storage/images/${imageName}`,image);
+    if (result[0].image_filename == null){
+        conn.release();
+        return 201;
+    }
+    conn.release();
+    return 201;
+}
+
+const deleteImageString = async (id: string, token:string) : Promise<any> => {
+    const conn = await getPool().getConnection();
+    const query = 'select image_filename, auth_token from user where id =?'
+    const [result] = await conn.query(query, [id]);
+    if (result[0]==null || result[0].image_filename==null){
+        return 404;
+    }
+    else if (token !== result[0].auth_token){
+        return 403;
+    }
+    fs.rmSync(`./storage/images/${result[0].image_filename}`);
+    const deleteImageQuery = "Update user set image_filename = null where id =?"
+    const [deleteResult]= await conn.query(deleteImageQuery, [id]);
+    return;
+
 }
 
 
-export{getImageString, setImageString}
+export{getImageString, setImageString,deleteImageString}
