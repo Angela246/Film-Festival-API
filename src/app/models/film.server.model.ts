@@ -29,4 +29,43 @@ const getGenre= async ()=>{
     const [result]= await conn.query('select id as genreId,name from genre');
     return result;
 }
-export{getFilm,getGenre}
+
+// TODO need to check releasedate in the future
+const addFilm= async(token:string, body:any): Promise<any>=>{
+    const conn = await getPool().getConnection();
+    if (body.age_rating==null){
+        body.age_rating='TBC';
+    }
+    if (!body.runtime){
+        body.runtime=null;
+    }
+    let query = 'select * from genre where id =?'
+    const[genreIdResult]= await conn.query(query, [body.genreId]);
+
+    if (genreIdResult[0]==null){
+        return 400;
+    }
+    if (new Date().getTime()>new Date(body.releaseDate).getTime()){
+        return 400;
+    }
+    query= 'select * from film where title =?'
+    const[titleExist] = await conn.query(query,[body.title]);
+    if (titleExist[0]!==null){
+        return 403;
+    }
+
+    query= 'select * from user where auth_token = ?'
+    const[authorizeUser] = await conn.query(query, [token]);
+
+    if (authorizeUser[0]==null){
+        return 401;
+    }
+    // const query = 'insert into user (email, first_name,last_name, password) values ( ? )';
+
+    query='insert into film  (title, description,release_date,runtime,genre_id, age_rating ) values(?,?,?,?,?,?)'
+    const[insertFilm] = await conn.query(query, [body.title,body.description, body.releaseDate, body.genreId,body.runtime,body.ageRating]);
+    return insertFilm[0].id;
+
+}
+
+export{getFilm,getGenre,addFilm}

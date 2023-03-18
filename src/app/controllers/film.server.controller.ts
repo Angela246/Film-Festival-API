@@ -1,7 +1,22 @@
 import {Request, Response} from "express";
 import Logger from "../../config/logger";
 import * as film from "../models/film.server.model";
+import Ajv from 'ajv';
+import * as schema from "../resources/schemas.json";
+const ajv = new Ajv({removeAdditional:'all',strict:false});
 
+const validate = async (schemas:object,data:any)=>{
+    try{
+        const validator = ajv.compile(schemas);
+        const valid = await validator(data);
+        if (!valid){
+            return ajv.errorsText(validator.errors);
+        }
+        return true;
+    }catch(err){
+        return err.message;
+    }
+}
 
 const viewAll = async (req: Request, res: Response): Promise<void> => {
     try{
@@ -38,10 +53,35 @@ const getOne = async (req: Request, res: Response): Promise<void> => {
 }
 
 const addOne = async (req: Request, res: Response): Promise<void> => {
+    const token= req.header("X-Authorization");
+    const validation = await validate( schema.film_post,req.body);
+    if (validation!==true){
+        res.statusMessage=`Bad Request: ${validation.toString()}`;
+        res.status(400).send();
+        return;
+    }
     try{
-        // Your code goes here
-        res.statusMessage = "Not Implemented Yet!";
-        res.status(501).send();
+        const result = await film.addFilm(token, req.body);
+
+        if (result=== 400){
+            res.statusMessage = "Bad Request";
+            res.status(400).send();
+            return;
+
+        }
+
+        if (result === 401){
+            res.statusMessage = "Unauthorized";
+            res.status(401).send();
+            return
+        }
+
+        if (result === 403){
+            res.statusMessage = "Forbidden. Film title is not unique, or cannot release a film in the past";
+            res.status(403).send();
+            return
+        }
+        res.status(200).send(result);
         return;
     } catch (err) {
         Logger.error(err);
