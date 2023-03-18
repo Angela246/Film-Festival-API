@@ -1,5 +1,6 @@
 import { getPool } from '../../config/db';
 import Logger from '../../config/logger';
+import fs from "mz/fs";
 
 // const viewAllFilm = async(query:any) : Promise<any> =>{
 //     Logger.info ("Getting all film from the database");
@@ -50,7 +51,7 @@ const addFilm= async(token:string, body:any): Promise<any>=>{
     }
     query= 'select * from film where title =?'
     const[titleExist] = await conn.query(query,[body.title]);
-    if (titleExist[0]!==null){
+    if (titleExist[0]!=null){
         return 403;
     }
 
@@ -60,12 +61,29 @@ const addFilm= async(token:string, body:any): Promise<any>=>{
     if (authorizeUser[0]==null){
         return 401;
     }
-    // const query = 'insert into user (email, first_name,last_name, password) values ( ? )';
-
     query='insert into film  (title, description,release_date,runtime,genre_id, age_rating ) values(?,?,?,?,?,?)'
     const[insertFilm] = await conn.query(query, [body.title,body.description, body.releaseDate, body.genreId,body.runtime,body.ageRating]);
     return insertFilm[0].id;
 
 }
+const deleteFilm= async(token:string, id:string): Promise<any>=>{
+    if(!token){
+        return 401;
+    }
+    const conn = await getPool().getConnection();
+    let query = 'select * from film where id =?'
+    const[filmInfo] = await conn.query (query, [id]);
+    if (filmInfo[0]==null){
+        return 404;
+    }
+    query = 'select id from user where auth_token==?'
+    const[directorInfo] = await conn.query(query, [token]);
+    if (directorInfo.id !== filmInfo.director_id){
+        return 403;
+    }
+    fs.rmSync(`./storage/images/${filmInfo[0].image_filename}`);
+    await conn.query('delete from film where id =?', [id]);
+    return;
+}
 
-export{getFilm,getGenre,addFilm}
+export{getFilm,getGenre,addFilm,deleteFilm}
