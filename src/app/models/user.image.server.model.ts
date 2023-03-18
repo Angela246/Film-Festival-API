@@ -9,7 +9,7 @@ const getImageString = async (id: string) : Promise<any> => {
     const [ result ] = await conn.query( query, [ id ] );
     if (result[0].image_filename==null||result[0]==null){
         conn.release();
-        return;
+        return result;
     }
     else {
         const extension = path.extname(`${result[0].image_filename}`);
@@ -51,7 +51,7 @@ const setImageString = async (id: string,image:any, token:string, contentType:st
         return 201;
     }
     conn.release();
-    return 201;
+    return 200;
 }
 
 const deleteImageString = async (id: string, token:string) : Promise<any> => {

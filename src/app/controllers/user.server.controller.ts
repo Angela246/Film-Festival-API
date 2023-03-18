@@ -89,7 +89,7 @@ const login = async (req: Request, res: Response): Promise<void> => {
             return;
         }
         else {
-            res.status(200).send(result);
+            res.status(200).send({userId :result});
             return token;
         }
     } catch (err) {
@@ -108,6 +108,7 @@ const logout = async (req: Request, res: Response): Promise<void> => {
             res.statusMessage = "Unauthorized. Cannot log out if you are not authenticated";
             res.status(401).send();
         }
+        // res.setHeader("X-Authorization",null);
         res.status(200).send();
         return;
     } catch (err) {
@@ -156,10 +157,19 @@ const update = async (req: Request, res: Response): Promise<void> => {
             res.status(401).send();
             return;
         }
-        // Your code goes here
-        res.statusMessage = "Not Implemented Yet!";
-        res.status(501).send();
-        return;
+
+        else if (response === 403){
+            res.statusMessage= "Forbidden. This is not your account, or the email is already in use, or identical current and new passwords"
+            res.status(403).send();
+            return;
+        }
+
+        else if (response === 404){
+            res.statusMessage= "Not Found"
+            res.status(404).send();
+            return;
+        }
+        res.status(200).send();
     } catch (err) {
         Logger.error(err);
         res.statusMessage = "Internal Server Error";
