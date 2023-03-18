@@ -1,6 +1,7 @@
 import { getPool } from '../../config/db';
 import Logger from '../../config/logger';
 import {ResultSetHeader} from "mysql2";
+import * as passwords from '../middleware/password.hash';
 
 const register = async(email:string, firstname:string, lastname:string, password:string): Promise<ResultSetHeader> =>{
     Logger.info(`Adding user to the database`);
@@ -9,6 +10,8 @@ const register = async(email:string, firstname:string, lastname:string, password
     const emailQuery ='select * from user where email =?';
     const[existEmail]=await conn.query(emailQuery,[email]);
     if (existEmail[0]==null){
+        password= await passwords.hash(password)
+
         const [result] = await conn.query(query, [[[email], [firstname], [lastname], [password]]]);
         await conn.release();
         return result.insertId;
@@ -24,11 +27,10 @@ const login =async(email:string, password:string, token:string) : Promise<any> =
     if (users[0]==null){
         await conn.release();
         return null;
-    } else if (password.localeCompare(users[0].password)){
+    } else if (!await passwords.checkPassword(password, users[0].password)){
         await conn.release();
         return null;
-    }
-    else{
+    } else{
         query='update user set auth_token =? where id =? and email =?';
         const[result]= await conn.query(query, [token, users[0].id, email]);
         await conn.release();
@@ -73,9 +75,33 @@ const view = async(id:string, token:string): Promise<any>=>{
     }
 }
 
-// const update = async(id:string, token:string): Promise<any>=>{
-//
-// }
+const update = async(id:string, token:string, body:any ): Promise<any>=>{
+    const conn = await getPool().getConnection();
+    let query = 'select id, password from user where auth_token =?'
+    const[result]=  await conn.query(query, [token]);
+    query ='select * from user where email =?';
+    const[emailResult]= await conn.query(query, [body.email])
+    body.currentpassword=await passwords.hash(body.currentpassword)
+    body.password = await passwords.hash(body.password)
+    if (result[0].password !== body.currentpassword ||token == null){
+        return 401;
+    }
+    else if (result[0].id !==id ||result[0].password === body.password|| emailResult[0]!==null){
+        return 403;
+    }
+    else if (result[0]==null){
+        return 404;
+    }
+
+    else{
+        query = 'update user set email=?, first_name = ?, last_name =?, password =? where id =? and auth_token =?'
+        const[updateResult] = await conn.query(query, [body.email, body.firstName, body.lastName, body.password, id, token]);
+        conn.release();
+        return updateResult;
+
+    }
+
+}
 
 
-export{register,login,logout, view}
+export{register,login,logout, view,update}
