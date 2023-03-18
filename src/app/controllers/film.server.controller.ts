@@ -1,22 +1,8 @@
 import {Request, Response} from "express";
 import Logger from "../../config/logger";
 import * as film from "../models/film.server.model";
-import Ajv from 'ajv';
+import * as validation from '../middleware/validation';
 import * as schema from "../resources/schemas.json";
-const ajv = new Ajv({removeAdditional:'all',strict:false});
-
-const validate = async (schemas:object,data:any)=>{
-    try{
-        const validator = ajv.compile(schemas);
-        const valid = await validator(data);
-        if (!valid){
-            return ajv.errorsText(validator.errors);
-        }
-        return true;
-    }catch(err){
-        return err.message;
-    }
-}
 
 const viewAll = async (req: Request, res: Response): Promise<void> => {
     try{
@@ -54,9 +40,9 @@ const getOne = async (req: Request, res: Response): Promise<void> => {
 
 const addOne = async (req: Request, res: Response): Promise<void> => {
     const token= req.header("X-Authorization");
-    const validation = await validate( schema.film_post,req.body);
-    if (validation!==true){
-        res.statusMessage=`Bad Request: ${validation.toString()}`;
+    const validationInput = await validation.validate( schema.film_post,req.body);
+    if (validationInput!==true){
+        res.statusMessage=`Bad Request: ${validationInput.toString()}`;
         res.status(400).send();
         return;
     }

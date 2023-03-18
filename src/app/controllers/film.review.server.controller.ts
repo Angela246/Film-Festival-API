@@ -2,22 +2,7 @@ import {Request, Response} from "express";
 import Logger from "../../config/logger";
 import * as reviews from '../models/film.review.server.model';
 import * as schema from "../resources/schemas.json";
-import Ajv from "ajv";
-const ajv = new Ajv({removeAdditional:'all',strict:false});
-
-
-const validate = async (schemas:object,data:any)=>{
-    try{
-        const validator = ajv.compile(schemas);
-        const valid = await validator(data);
-        if (!valid){
-            return ajv.errorsText(validator.errors);
-        }
-        return true;
-    }catch(err){
-        return err.message;
-    }
-}
+import * as validation from '../middleware/validation';
 
 const getReviews = async (req: Request, res: Response): Promise<void> => {
     try{
@@ -36,12 +21,11 @@ const getReviews = async (req: Request, res: Response): Promise<void> => {
     }
 }
 
-
 const addReview = async (req: Request, res: Response): Promise<void> => {
     const token= req.header("X-Authorization");
-    const validation =await validate (schema.film_review_post,req.body);
-    if (validation!==true){
-        res.statusMessage=`Bad Request: ${validation.toString()}`;
+    const validationInput =await validation.validate (schema.film_review_post,req.body);
+    if (validationInput!==true){
+        res.statusMessage=`Bad Request: ${validationInput.toString()}`;
         res.status(400).send();
         return;
     }

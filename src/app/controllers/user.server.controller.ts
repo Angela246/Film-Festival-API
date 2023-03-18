@@ -2,45 +2,15 @@ import {Request, Response} from "express";
 import Logger from "../../config/logger";
 import * as schema from "../resources/schemas.json"
 import * as users from '../models/user.server.model';
-import Ajv from 'ajv';
-const ajv = new Ajv({removeAdditional:'all',strict:false});
-
-import randToken from 'rand-token';
-
-const randomToken = async (x: number) : Promise<any> =>{
-    return randToken.generate(x);
-};
-const validateEmail = async(email:string): Promise<any> =>{
-    const emailRegex=/(([a-z]|[0-9])+(([.])([a-z]|[0-9])+)*([@])([a-z]|[0-9])+(([.])([a-z]|[0-9])+)+)/;
-    if (email.match(emailRegex))
-    {
-        return true;
-    }
-    else{
-        return false;
-    }
-}
-const validate = async (schemas:object,data:any)=>{
-    try{
-        const validator = ajv.compile(schemas);
-        const valid = await validator(data);
-        if (!valid){
-            return ajv.errorsText(validator.errors);
-        }
-        return true;
-    }catch(err){
-        return err.message;
-    }
-}
-
+import * as validation from '../middleware/validation';
 // Double check validation such as email validation and password
 const register = async (req: Request, res: Response): Promise<void> => {
     Logger.http(`Registering user with email: ${req.body.email}`)
-    const validation = await validate( schema.user_register,req.body);
-    const emailValidation = await validateEmail(req.body.email)
+    const validationInput = await validation.validate( schema.user_register,req.body);
+    const emailValidation = await validation.validateEmail(req.body.email)
 
-    if (validation!==true){
-        res.statusMessage=`Bad Request: ${validation.toString()}`;
+    if (validationInput!==true){
+        res.statusMessage=`Bad Request: ${validationInput.toString()}`;
         res.status(400).send();
         return;
     }
@@ -67,21 +37,19 @@ const register = async (req: Request, res: Response): Promise<void> => {
 };
 // Doesn't check if email is in the database
 const login = async (req: Request, res: Response): Promise<void> => {
-    Logger.http(`Logging user with: ${req.body.email}`)
-    const token = await randomToken(32);
-    const validation =await validate (schema.user_login,req.body);
-    if (validation!==true){
-        res.statusMessage=`Bad Request: ${validation.toString()}`;
+    const token = await validation.randomToken(32);
+    const validationInput =await validation.validate (schema.user_login,req.body);
+    if (validationInput!==true){
+        res.statusMessage=`Bad Request: ${validationInput.toString()}`;
         res.status(400).send();
         return;
     }
-    const emailValidation = await validateEmail(req.body.email);
+    const emailValidation = await validation.validateEmail(req.body.email);
      if (emailValidation ===false){
         res.statusMessage='Bad Request: data/email must match format "email"'
         res.status(400).send();
         return;
     }try{
-        Logger.http(`Passed validation for email and password`);
         const result = await users.login(req.body.email, req.body.password,token);
         if (result == null){
             res.statusMessage='Not Authorised. Incorrect email/password'
@@ -89,8 +57,7 @@ const login = async (req: Request, res: Response): Promise<void> => {
             return;
         }
         else {
-            res.status(200).send({userId :result});
-            return token;
+            res.status(200).send(result);
         }
     } catch (err) {
         Logger.error(err);
@@ -143,9 +110,9 @@ const view = async (req: Request, res: Response): Promise<void> => {
 // TODO fix update methods
 const update = async (req: Request, res: Response): Promise<void> => {
     const token = req.header('X-Authorization');
-    const validation =await validate (schema.user_login,req.body);
-    if (validation!==true){
-        res.statusMessage=`Bad Request: ${validation.toString()}`;
+    const validationInput =await validation.validate (schema.user_login,req.body);
+    if (validationInput!==true){
+        res.statusMessage=`Bad Request: ${validationInput.toString()}`;
         res.status(400).send();
         return;
     }
