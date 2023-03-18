@@ -32,14 +32,36 @@ const getImage = async (req: Request, res: Response): Promise<void> => {
 }
 const setImage = async (req: Request, res: Response): Promise<void> => {
     const token= req.header("X-Authorization");
+    // TODO No contentType in the header for set image files
     const contentType = req.headers['content-type'];
-    const extension = contentType.split("/");
     try{
         const imageResult = await filmsImage.setFilmImage(req.params.id, req.body, token,contentType)
-        // Your code goes here
-        res.statusMessage = "Not Implemented Yet!";
-        res.status(501).send();
-        return;
+        if (imageResult ===400){
+            res.statusMessage = "Bad Request";
+            res.status(400).send();
+            return;
+        }
+        if (imageResult ===401){
+            res.statusMessage = "Unauthorized";
+            res.status(401).send();
+            return;
+        }
+        if (imageResult ===403){
+            res.statusMessage = "Forbidden. Only the director of a film can change the hero image";
+            res.status(403).send();
+            return;
+        }
+        if (imageResult ===404){
+            res.statusMessage = "Not Found. No film found with id";
+            res.status(404).send();
+            return;
+        }
+        if (imageResult ===201){
+            res.statusMessage="Created";
+            res.status(201).send();
+        }
+        res.status(200).send();
+
     } catch (err) {
         Logger.error(err);
         res.statusMessage = "Internal Server Error";

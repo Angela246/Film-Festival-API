@@ -7,7 +7,7 @@ const getImageString = async (id: string) : Promise<any> => {
     const conn = await getPool().getConnection();
     const query = 'select image_filename from user where id = ?';
     const [ result ] = await conn.query( query, [ id ] );
-    if (result[0].image_filename==null||result[0]==null){
+    if (result[0]==null){
         conn.release();
         return result;
     }
@@ -20,6 +20,12 @@ const getImageString = async (id: string) : Promise<any> => {
 }
 
 const setImageString = async (id: string,image:any, token:string, contentType:string) : Promise<any> =>{
+    const extension = contentType.split("/");
+    const imageType= extension[1];
+
+    if (imageType!=="jpeg"&&imageType!=="jpg"&&imageType !=="png"&&imageType !=="gif"){
+        return 400;
+    }
     if (token==null){
         return 401;
     }
@@ -33,13 +39,6 @@ const setImageString = async (id: string,image:any, token:string, contentType:st
     else if (result[0].auth_token !== token){
         conn.release();
         return 403;
-    }
-    const extension = contentType.split("/");
-    const imageType= extension[1];
-
-    if (imageType!=="jpeg"&&imageType!=="jpg"&&imageType !=="png"&&imageType !=="gif"){
-        conn.release();
-        return 400;
     }
     const imageName= `user_${id}.${imageType}`;
     query= 'update user set image_filename = ? where id =?';

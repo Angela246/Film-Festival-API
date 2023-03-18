@@ -20,9 +20,14 @@ const viewAll = async (req: Request, res: Response): Promise<void> => {
 
 const getOne = async (req: Request, res: Response): Promise<void> => {
     try{
-        // Your code goes here
-        res.statusMessage = "Not Implemented Yet!";
-        res.status(501).send();
+        const result =await film.getFilm(req.params.id);
+
+        if (result ===404){
+            res.statusMessage = "Not Found. No film with id";
+            res.status(404).send();
+            return;
+        }
+        res.status(200).send(result);
         return;
     } catch (err) {
         Logger.error(err);
@@ -76,9 +81,8 @@ const deleteOne = async (req: Request, res: Response): Promise<void> => {
 
 const getGenres = async (req: Request, res: Response): Promise<void> => {
     try{
-        // Your code goes here
-        res.statusMessage = "Not Implemented Yet!";
-        res.status(501).send();
+        const result = await film.getGenre();
+        res.status(200).send(result);
         return;
     } catch (err) {
         Logger.error(err);

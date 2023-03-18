@@ -140,7 +140,7 @@ const view = async (req: Request, res: Response): Promise<void> => {
     }
 }
 
-
+// TODO fix update methods
 const update = async (req: Request, res: Response): Promise<void> => {
     const token = req.header('X-Authorization');
     const validation =await validate (schema.user_login,req.body);

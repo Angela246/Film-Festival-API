@@ -1,6 +1,7 @@
 import {getPool} from "../../config/db";
 import path from "path";
 import fs from "fs";
+import Logger from "../../config/logger";
 
 const getFilmImage = async (id: string) : Promise<any> => {
     const conn = await getPool().getConnection();
@@ -19,6 +20,12 @@ const getFilmImage = async (id: string) : Promise<any> => {
 }
 
 const setFilmImage = async (id: string,image:any, token:string, contentType:string) : Promise<any> =>{
+    Logger.info(`Reach this part?${contentType}`);
+    const extension = contentType.split("/");
+    const imageType= extension[1];
+    if (!id||!image||!contentType||(imageType!=="jpeg"&&imageType!=="jpg"&&imageType !=="png"&&imageType !=="gif")){
+        return 400;
+    }
     if(token==null){
         return 401;
     }
@@ -31,9 +38,6 @@ const setFilmImage = async (id: string,image:any, token:string, contentType:stri
     else if (token !== result[0].auth_token){
         return 403;
     }
-
-    const extension = contentType.split("/");
-    const imageType= extension[1];
     const imageName = `film_${id}.${imageType}`
     query ='update film set image_filename =? where id =?';
     const[updatedImage] = await conn.query(query,[imageName,id]);
