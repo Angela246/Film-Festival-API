@@ -12,6 +12,8 @@ const getReviews = async (id: string) : Promise<any> => {
     return result;
 }
 
+// TODO no authorisation
+
 const addReviews = async(rating:number, review:string, id:string,token:string): Promise<any> => {
     const conn = await getPool().getConnection();
     // When user is logged out, token is suppose to be null but it's coming up as not null

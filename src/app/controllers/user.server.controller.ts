@@ -35,7 +35,7 @@ const register = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 };
-// Doesn't check if email is in the database
+
 const login = async (req: Request, res: Response): Promise<void> => {
     const token = await validation.randomToken(32);
     const validationInput =await validation.validate (schema.user_login,req.body);

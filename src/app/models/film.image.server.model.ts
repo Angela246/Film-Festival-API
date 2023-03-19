@@ -19,11 +19,15 @@ const getFilmImage = async (id: string) : Promise<any> => {
     }
 }
 
+// TODO content type is null?
 const setFilmImage = async (id: string,image:any, token:string, contentType:string) : Promise<any> =>{
     Logger.info(`Reach this part?${contentType}`);
+    if (!id||!image||!contentType){
+        return 400;
+    }
     const extension = contentType.split("/");
     const imageType= extension[1];
-    if (!id||!image||!contentType||(imageType!=="jpeg"&&imageType!=="jpg"&&imageType !=="png"&&imageType !=="gif")){
+    if (imageType!=="jpeg"&&imageType!=="jpg"&&imageType !=="png"&&imageType !=="gif"){
         return 400;
     }
     if(token==null){

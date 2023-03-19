@@ -67,7 +67,7 @@ const view = async(id:string, token:string): Promise<any>=>{
     }
     else if (users[0].auth_token!=null && users[0].auth_token===token){
         await conn.release();
-        return {email:users[0].email};
+        return {email:users[0].email, firstName:users[0].first_name, lastName:users[0].last_name};
     }
     else if (users[0].auth_token==null ){
         await conn.release();

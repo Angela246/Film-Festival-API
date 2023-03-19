@@ -5,7 +5,7 @@ import * as usersImage from '../models/user.image.server.model';
 const getImage = async (req: Request, res: Response): Promise<void> => {
     try{
         const imageResult = await usersImage.getImageString(req.params.id);
-        Logger.http(`imageType: ${imageResult[1]}`)
+        Logger.http(`imageType:${imageResult[1]}`)
         res.setHeader("Content-Type", "image/png");
         if (imageResult == null||imageResult[0] ==null|| imageResult[1]==null){
             res.statusMessage ="Not Found. No user with specified ID, or user has no image";
@@ -16,7 +16,7 @@ const getImage = async (req: Request, res: Response): Promise<void> => {
             res.setHeader("Content-Type", "image/gif");
             res.status(200).send(imageResult[0]);
         }
-        else if (imageResult[1]===".jpg"){
+        else if (imageResult[1]===".jpg"||imageResult[1]===".jpeg"){
             res.setHeader("Content-Type", "image/jpeg");
             res.status(200).send(imageResult[0]);
         }
@@ -31,7 +31,6 @@ const getImage = async (req: Request, res: Response): Promise<void> => {
         return;
     }
 }
-
 
 const setImage = async (req: Request, res: Response): Promise<void> => {
     const token= req.header("X-Authorization");
