@@ -1,9 +1,16 @@
 import { getPool } from '../../config/db';
 import Logger from '../../config/logger';
 import fs from "mz/fs";
+
 const viewAllFilm = async(query:any) : Promise<any> =>{
     Logger.info ("Getting all film from the database");
     const conn = await getPool().getConnection();
+
+    // select film.id as filmId, film.title, film.genre_id as
+    //     genreId, film.age_rating as ageRating, film.director_id as directorId, user.first_name as directorFirstName,
+    //     user.last_name as directorLastName, (select avg(rating) from film_review where film_review.film_id = film.id) as rating,film.release_date as
+    //     releaseDate from film join film_review on film.id = film_review.film_id join user on film.director_id = user.id
+
     const sortMapping = {
         ALPHABETICAL_ASC: "title ASC",
         ALPHABETICAL_DESC: "title DESC",
