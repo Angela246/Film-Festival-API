@@ -77,31 +77,36 @@ const view = async(id:string, token:string): Promise<any>=>{
 
 const update = async(id:string, token:string, body:any ): Promise<any>=>{
     const conn = await getPool().getConnection();
-    let query = 'select id, password from user where auth_token =?'
-    const[result]=  await conn.query(query, [token]);
-    query ='select * from user where email =?';
-    const[emailResult]= await conn.query(query, [body.email])
-    body.currentpassword=await passwords.hash(body.currentpassword)
-    body.password = await passwords.hash(body.password)
-    if (result[0].password !== body.currentpassword ||token == null){
+    if (!token) {
         return 401;
     }
-    else if (result[0].id !==id ||result[0].password === body.password|| emailResult[0]!==null){
-        return 403;
-    }
-    else if (result[0]==null){
+    let query = 'select * from user where id =?';
+    const[currentUser] = await conn.query(query,[id]);
+    if (!currentUser[0]){
         return 404;
     }
-
-    else{
-        query = 'update user set email=?, first_name = ?, last_name =?, password =? where id =? and auth_token =?'
-        const[updateResult] = await conn.query(query, [body.email, body.firstName, body.lastName, body.password, id, token]);
-        conn.release();
-        return updateResult;
-
+    if (currentUser[0].auth_token !==token){
+        return 403;
     }
+    if (body.email){
+        query= 'select * from user where email = ?'
+        const[emailQuery]= await conn.query(query,[body.email]);
+        if (emailQuery[0]){
+            return 400;
+        }
+    }
+    if (body.password){
+        if (! await passwords.checkPassword(body.currentPassword, currentUser[0].password)){
+            return 401;
+        }
+        body.password = await passwords.hash(body.password)
+        delete body.currentPassword;
+    }
+    currentUser[0]=  Object.assign(currentUser[0], body);
+    query = 'update user set email =?, first_name =?, last_name = ?, password =? where id =?'
+    await conn.query(query, [currentUser[0].email, currentUser[0].first_name, currentUser[0].last_name, currentUser[0].password,id]);
+    return 200;
 
 }
-
 
 export{register,login,logout, view,update}

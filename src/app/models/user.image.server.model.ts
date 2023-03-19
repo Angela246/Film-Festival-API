@@ -65,7 +65,7 @@ const deleteImageString = async (id: string, token:string) : Promise<any> => {
     }
     fs.rmSync(`./storage/images/${result[0].image_filename}`);
     const deleteImageQuery = "Update user set image_filename = null where id =?"
-    const [deleteResult]= await conn.query(deleteImageQuery, [id]);
+    await conn.query(deleteImageQuery, [id]);
     return;
 
 }

@@ -11,7 +11,7 @@ const register = async (req: Request, res: Response): Promise<void> => {
 
     if (validationInput!==true){
         res.statusMessage=`Bad Request: ${validationInput.toString()}`;
-        res.status(400).send();
+        res.status(400).send(`Bad Request: ${validationInput.toString()}`);
         return;
     }
     else if (emailValidation ===false){
@@ -75,7 +75,6 @@ const logout = async (req: Request, res: Response): Promise<void> => {
             res.statusMessage = "Unauthorized. Cannot log out if you are not authenticated";
             res.status(401).send();
         }
-        // res.setHeader("X-Authorization",null);
         res.status(200).send();
         return;
     } catch (err) {
@@ -107,9 +106,9 @@ const view = async (req: Request, res: Response): Promise<void> => {
     }
 }
 
-// TODO fix update methods
 const update = async (req: Request, res: Response): Promise<void> => {
     const token = req.header('X-Authorization');
+    // TODO make it so that email or password are not required
     const validationInput =await validation.validate (schema.user_login,req.body);
     if (validationInput!==true){
         res.statusMessage=`Bad Request: ${validationInput.toString()}`;

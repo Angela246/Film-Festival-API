@@ -44,7 +44,7 @@ const setFilmImage = async (id: string,image:any, token:string, contentType:stri
     }
     const imageName = `film_${id}.${imageType}`
     query ='update film set image_filename =? where id =?';
-    const[updatedImage] = await conn.query(query,[imageName,id]);
+    await conn.query(query,[imageName,id]);
     fs.writeFileSync(`./storage/images/${imageName}`,image);
     conn.release();
     if (result[0].image_filename==null){
