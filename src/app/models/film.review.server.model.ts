@@ -6,7 +6,7 @@ const getReviews = async (id: string) : Promise<any> => {
     const query = 'select user_id as reviewerId,user.first_name as reviewerFirstName, user.last_name as reviewerLastName, rating,review,timestamp from film_review JOIN user ON film_review.user_id = user.id where film_review.film_id =? order by timestamp desc';
     const [result]= await conn.query(query,[parseInt(id,10)]);
     conn.release();
-    if (result[0] ==null){
+    if (result[0] === undefined){
         return null;
     }
     return result;
@@ -25,7 +25,7 @@ const addReviews = async(rating:number, review:string, id:string,token:string): 
     const [result] = await conn.query(query, [token]);
     query = 'select director_id from film where id =?';
     const [results] = await conn.query(query, [parseInt(id,10)]);
-    if (results[0] == null) {
+    if (results[0] === undefined) {
         return 404;
     }
     if (results[0].director_id === result[0].id) {

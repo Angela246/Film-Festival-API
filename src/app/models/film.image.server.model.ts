@@ -7,7 +7,7 @@ const getFilmImage = async (id: string) : Promise<any> => {
     const conn = await getPool().getConnection();
     const query = 'select image_filename from film where id = ?';
     const [ result ] = await conn.query( query, [ id ] );
-    if (result[0]==null||result[0].image_filename==null){
+    if (result[0]===undefined||result[0].image_filename==null){
         conn.release();
         return result
     }
@@ -36,7 +36,7 @@ const setFilmImage = async (id: string,image:any, token:string, contentType:stri
     const conn = await getPool().getConnection();
     let query = 'select film.image_filename, user.auth_token from user join film on user.id = film.director_id where film.id =?'
     const [result] = await conn.query (query, [id]);
-    if (result[0]==null){
+    if (result[0]===undefined){
         return 404;
     }
     else if (token !== result[0].auth_token){

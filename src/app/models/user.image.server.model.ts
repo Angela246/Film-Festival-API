@@ -5,11 +5,11 @@ import Logger from "../../config/logger";
 
 const getImageString = async (id: string) : Promise<any> => {
     const conn = await getPool().getConnection();
-    const query = 'select image_filename from user where id = ?';
-    const [ result ] = await conn.query( query, [ id ] );
-    if (result[0]==null){
+    const query = 'select * from user where id = ?';
+    const [ result ] = await conn.query( query, [id] );
+    if (result[0]===undefined||result[0].image_filename===null){
         conn.release();
-        return result;
+        return 404;
     }
     else {
         const extension = path.extname(`${result[0].image_filename}`);
@@ -32,7 +32,7 @@ const setImageString = async (id: string,image:any, token:string, contentType:st
     const conn = await getPool().getConnection();
     let query ='select image_filename, auth_token from user where id =?'
     const [result] = await conn.query(query, [id]);
-    if (result[0]==null){
+    if (result[0]===undefined){
         conn.release();
         return 404;
     }
@@ -57,7 +57,7 @@ const deleteImageString = async (id: string, token:string) : Promise<any> => {
     const conn = await getPool().getConnection();
     const query = 'select image_filename, auth_token from user where id =?'
     const [result] = await conn.query(query, [id]);
-    if (result[0]==null || result[0].image_filename==null){
+    if (result[0]===undefined || result[0].image_filename==null){
         return 404;
     }
     else if (token !== result[0].auth_token){
@@ -69,6 +69,5 @@ const deleteImageString = async (id: string, token:string) : Promise<any> => {
     return;
 
 }
-
 
 export{getImageString, setImageString,deleteImageString}

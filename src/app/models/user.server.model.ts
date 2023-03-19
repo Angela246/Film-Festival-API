@@ -32,7 +32,7 @@ const login =async(email:string, password:string, token:string) : Promise<any> =
         return null;
     } else{
         query='update user set auth_token =? where id =? and email =?';
-        const[result]= await conn.query(query, [token, users[0].id, email]);
+        await conn.query(query, [token, users[0].id, email]);
         await conn.release();
         return {userId:users[0].id, token};
     }
@@ -56,20 +56,28 @@ const logout = async(token:string) : Promise<any> =>{
     await conn.release();
     return result;
 }
+
+// header token is different from user token
 const view = async(id:string, token:string): Promise<any>=>{
     Logger.info(`Viewing user details`);
     const conn = await getPool().getConnection();
     const query= 'select email,first_name,last_name,auth_token from user where id =?'
     const[users]=  await conn.query(query, [id]);
-    if (users[0] ==null){
+    Logger.info(`Reach this part? ${users[0].auth_token}`);
+    Logger.info(`Reach this part? ${token}`);
+    Logger.info(`Reach this part? ${users[0].auth_token!=null}`);
+    Logger.info(`Reach this part? ${users[0].auth_token===token}`);
+    if (!users[0]){
         await conn.release();
         return null;
     }
     else if (users[0].auth_token!=null && users[0].auth_token===token){
+        Logger.info(`Reach this part 1? ${users[0].first_name}`);
         await conn.release();
         return {email:users[0].email, firstName:users[0].first_name, lastName:users[0].last_name};
     }
     else if (users[0].auth_token==null ){
+        Logger.info(`Reach this part 2? ${users[0].first_name}`);
         await conn.release();
         return {firstName: users[0].first_name, lastName: users[0].last_name};
     }

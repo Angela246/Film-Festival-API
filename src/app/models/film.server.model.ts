@@ -27,7 +27,7 @@ const getFilm = async(id:string): Promise<any>=>{
     Logger.info(`Reach this part? ${id}`);
     let query = 'select * from film where id=?'
     const[filmInfo] = await conn.query(query,[parseInt(id,10)]);
-    if (filmInfo[0]==null){
+    if (filmInfo[0]===undefined){
         return 404;
     }
     query = 'select user.first_name, user.last_name from user where id=?'
@@ -57,7 +57,7 @@ const addFilm= async(token:string, body:any): Promise<any>=>{
     let query = 'select * from genre where id =?'
     const[genreIdResult]= await conn.query(query, [body.genreId]);
 
-    if (genreIdResult[0]==null){
+    if (genreIdResult[0]===undefined){
         return 400;
     }
     if (new Date().getTime()>new Date(body.releaseDate).getTime()){
@@ -65,14 +65,14 @@ const addFilm= async(token:string, body:any): Promise<any>=>{
     }
     query= 'select * from film where title =?'
     const[titleExist] = await conn.query(query,[body.title]);
-    if (titleExist[0]!=null){
+    if (titleExist[0]!==undefined){
         return 403;
     }
 
     query= 'select * from user where auth_token = ?'
     const[authorizeUser] = await conn.query(query, [token]);
 
-    if (authorizeUser[0]==null){
+    if (authorizeUser[0]===undefined){
         return 401;
     }
     query='insert into film  (title, description,release_date,runtime,genre_id, age_rating ) values(?,?,?,?,?,?)'
@@ -104,7 +104,6 @@ const editFilm = async(token:string, body:any, id:string): Promise <any> =>{
 
     query = 'select count(*) from film_review where film_id =?'
     const[countReviews] = await conn.query(query, [id]);
-    Logger.info(`Reach this part? ${countReviews[0].count}`);
     if (countReviews[0].count>0){
         return 403;
     }
@@ -120,7 +119,7 @@ const deleteFilm= async(token:string, id:string): Promise<any>=>{
     const conn = await getPool().getConnection();
     let query = 'select * from film where id =?'
     const[filmInfo] = await conn.query (query, [id]);
-    if (filmInfo[0]==null){
+    if (filmInfo[0]===undefined){
         return 404;
     }
     query = 'select id from user where auth_token==?'

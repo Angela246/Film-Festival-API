@@ -7,7 +7,7 @@ const getImage = async (req: Request, res: Response): Promise<void> => {
         const imageResult = await usersImage.getImageString(req.params.id);
         Logger.http(`imageType:${imageResult[1]}`)
         res.setHeader("Content-Type", "image/png");
-        if (imageResult == null||imageResult[0] ==null|| imageResult[1]==null){
+        if (imageResult === 404){
             res.statusMessage ="Not Found. No user with specified ID, or user has no image";
             res.status(404).send();
             return;

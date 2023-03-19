@@ -89,15 +89,14 @@ const view = async (req: Request, res: Response): Promise<void> => {
     try{
         Logger.http(`Viewing user with id: ${req.params.id}`)
         const response = await users.view(req.params.id,token);
-        if (response == null){
+        Logger.http(`response: ${response}`)
+        if (response === null){
             res.statusMessage=("Not Found. No user with specified ID");
             res.status(404).send();
             return;
         }
-        else {
-            res.status(200).send(response);
-            return;
-        }
+        res.status(200).send(response);
+
     } catch (err) {
         Logger.error(err);
         res.statusMessage = "Internal Server Error";
