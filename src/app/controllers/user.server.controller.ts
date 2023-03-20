@@ -107,10 +107,15 @@ const view = async (req: Request, res: Response): Promise<void> => {
 
 const update = async (req: Request, res: Response): Promise<void> => {
     const token = req.header('X-Authorization');
-    // TODO make it so that email or password are not required
-    const validationInput =await validation.validate (schema.user_login,req.body);
+    const validationInput =await validation.validate (schema.user_edit,req.body);
+    const emailValidation = await validation.validateEmail(req.body.email);
     if (validationInput!==true){
         res.statusMessage=`Bad Request: ${validationInput.toString()}`;
+        res.status(400).send();
+        return;
+    }
+    if (emailValidation ===false) {
+        res.statusMessage = 'Bad Request: data/email must match format "email"'
         res.status(400).send();
         return;
     }

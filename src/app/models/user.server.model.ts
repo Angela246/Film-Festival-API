@@ -93,7 +93,7 @@ const update = async(id:string, token:string, body:any ): Promise<any>=>{
     if (!currentUser[0]){
         return 404;
     }
-    if (currentUser[0].auth_token !==token){
+    if (currentUser[0].auth_token !==token || body.password === body.currentPassword){
         return 403;
     }
     if (body.email){
