@@ -63,10 +63,6 @@ const view = async(id:string, token:string): Promise<any>=>{
     const conn = await getPool().getConnection();
     const query= 'select email,first_name,last_name,auth_token from user where id =?'
     const[users]=  await conn.query(query, [id]);
-    Logger.info(`Reach this part? ${users[0].auth_token}`);
-    Logger.info(`Reach this part? ${token}`);
-    Logger.info(`Reach this part? ${users[0].auth_token!=null}`);
-    Logger.info(`Reach this part? ${users[0].auth_token===token}`);
     if (!users[0]){
         await conn.release();
         return null;

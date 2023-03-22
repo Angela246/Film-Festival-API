@@ -45,6 +45,7 @@ const getOne = async (req: Request, res: Response): Promise<void> => {
 }
 
 const addOne = async (req: Request, res: Response): Promise<void> => {
+    // TODO Failing invalid releasedate format
     const token= req.header("X-Authorization");
     const validationInput = await validation.validate( schema.film_post,req.body);
     if (validationInput!==true){
@@ -73,7 +74,7 @@ const addOne = async (req: Request, res: Response): Promise<void> => {
             res.status(403).send();
             return
         }
-        res.status(200).send(result);
+        res.status(201).send({filmId :result});
         return;
     } catch (err) {
         Logger.error(err);
@@ -84,7 +85,9 @@ const addOne = async (req: Request, res: Response): Promise<void> => {
 }
 
 const editOne = async (req: Request, res: Response): Promise<void> => {
+    // TODO failing (title and description) patch
     const token= req.header("X-Authorization");
+    Logger.http(`token is ${token}`)
     const validationInput = await validation.validate( schema.film_patch,req.body);
     if (validationInput!==true){
         res.statusMessage=`Bad Request: ${validationInput.toString()}`;
@@ -120,6 +123,7 @@ const editOne = async (req: Request, res: Response): Promise<void> => {
 
 const deleteOne = async (req: Request, res: Response): Promise<void> => {
     const token= req.header("X-Authorization");
+    Logger.http(`token is ${token}`)
     try{
         const result = await film.deleteFilm(token,req.params.id);
         if (result ===401){

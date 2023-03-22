@@ -89,7 +89,6 @@ const view = async (req: Request, res: Response): Promise<void> => {
     try{
         Logger.http(`Viewing user with id: ${req.params.id}`)
         const response = await users.view(req.params.id,token);
-        Logger.http(`response: ${response}`)
         if (response === null){
             res.statusMessage=("Not Found. No user with specified ID");
             res.status(404).send();
@@ -108,16 +107,19 @@ const view = async (req: Request, res: Response): Promise<void> => {
 const update = async (req: Request, res: Response): Promise<void> => {
     const token = req.header('X-Authorization');
     const validationInput =await validation.validate (schema.user_edit,req.body);
-    const emailValidation = await validation.validateEmail(req.body.email);
     if (validationInput!==true){
         res.statusMessage=`Bad Request: ${validationInput.toString()}`;
         res.status(400).send();
         return;
     }
-    if (emailValidation ===false) {
-        res.statusMessage = 'Bad Request: data/email must match format "email"'
-        res.status(400).send();
-        return;
+
+    if (req.body.email) {
+        const emailValidation = await validation.validateEmail(req.body.email);
+        if (emailValidation ===false) {
+            res.statusMessage = 'Bad Request: data/email must match format "email"'
+            res.status(400).send();
+            return;
+        }
     }
     try{
         const response = await users.update(req.params.id, token, req.body);
