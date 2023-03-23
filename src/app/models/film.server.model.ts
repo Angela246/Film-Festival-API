@@ -5,7 +5,7 @@ import fs from "mz/fs";
 const viewAllFilm = async(queryBody:any) : Promise<any> =>{
     Logger.info ("Getting all film from the database");
     const conn = await getPool().getConnection();
-    const query='select film.id as filmId, film.title, film.genre_id as~genreId, film.age_rating as ' +
+    const query='select film.id as filmId, film.title, film.genre_id as genreId, film.age_rating as ' +
         'ageRating, film.director_id as directorId, user.first_name as directorFirstName,user.last_name as directorLastName, ' +
         '(select avg(rating) from film_review where film_review.film_id = film.id) as rating,film.release_date ' +
         'as releaseDate from film join film_review on film.id = film_review.film_id join user on film.director_id = user.id'
@@ -55,7 +55,6 @@ const viewAllFilm = async(queryBody:any) : Promise<any> =>{
 }
 
 const getFilm = async(id:string): Promise<any>=>{
-    // TODO the list is different from test and api spec
     const conn = await getPool().getConnection();
     Logger.info(`Reach this part? ${id}`);
     let query = 'select * from film where id=?'
@@ -66,13 +65,13 @@ const getFilm = async(id:string): Promise<any>=>{
     query = 'select user.first_name, user.last_name from user where id=?'
     const[directorInfo]= await conn.query(query,[filmInfo[0].director_id])
 
-    query ='select count(*) as numReview,avg(rating) as ratingAverage from film_review where film_id =?'
+    query ='select count(*) as numReview,round(avg(rating),1) as ratingAverage from film_review where film_id =?'
     const[reviewCount]= await conn.query(query, [id]);
     if (reviewCount[0].ratingAverage==null){
         reviewCount[0].ratingAverage=0;
     }
     Logger.http (`Reach this part? ${reviewCount[0].ratingAverage}`)
-    return {filmId:filmInfo[0].id, title: filmInfo[0].title, genreId: filmInfo[0].genre_id, ageRating:filmInfo[0].age_rating, directorId:filmInfo[0].director_id, directorFirstName:directorInfo[0].first_name, directorLastName:directorInfo[0].last_name,rating:reviewCount[0].ratingAverage, releaseDate:filmInfo[0].release_date, description:filmInfo[0].description, runtime: filmInfo[0].runtime, numRatings:reviewCount[0].numReview }
+    return {filmId:filmInfo[0].id, title: filmInfo[0].title, genreId: filmInfo[0].genre_id, ageRating:filmInfo[0].age_rating, directorId:filmInfo[0].director_id, directorFirstName:directorInfo[0].first_name, directorLastName:directorInfo[0].last_name,rating:parseFloat(reviewCount[0].ratingAverage), releaseDate:filmInfo[0].release_date, description:filmInfo[0].description, runtime: filmInfo[0].runtime, numReviews:reviewCount[0].numReview }
 
 }
 
@@ -82,11 +81,15 @@ const getGenre= async ()=>{
     return result;
 }
 
-// TODO need to check releasedate in the future
+// TODO add own validation for release date
+
 const addFilm= async(token:string, body:any): Promise<any>=>{
     const conn = await getPool().getConnection();
     if (body.age_rating==null){
         body.age_rating='TBC';
+    }
+    if (!body.releaseDate){
+        body.releaseDate= Date.now();
     }
     if (!body.runtime){
         body.runtime=null;
@@ -96,9 +99,7 @@ const addFilm= async(token:string, body:any): Promise<any>=>{
     if (genreIdResult[0]===undefined){
         return 400;
     }
-    // TODO release date will be set to when the request is made?
     if (Date.now()>new Date(body.releaseDate).getTime()){
-        // body.releaseDate= Date.now();
         return 403;
     }
     query= 'select * from film where title =?'
@@ -147,8 +148,8 @@ const editFilm = async(token:string, body:any, id:string): Promise <any> =>{
         return 403;
     }
     filmAuthorization[0] = Object.assign(filmAuthorization[0], body);
-    query ='update film set title =?, description =?, release_date =?, image_filename =?, runtime=?, director_id=?, genre_id =?, age_rating=?'
-    await conn.query(query, [filmAuthorization[0].title, filmAuthorization[0].description, filmAuthorization[0].release_date, filmAuthorization[0].image_filename, filmAuthorization[0].runtime, filmAuthorization[0].director_id, filmAuthorization[0].genre_id, filmAuthorization[0].age_rating]);
+    query ='update film set title =?, description =?, release_date =?, image_filename =?, runtime=?, director_id=?, genre_id =?, age_rating=? where id =?'
+    await conn.query(query, [filmAuthorization[0].title, filmAuthorization[0].description, filmAuthorization[0].release_date, filmAuthorization[0].image_filename, filmAuthorization[0].runtime, filmAuthorization[0].director_id, filmAuthorization[0].genre_id, filmAuthorization[0].age_rating, id]);
     return 200;
 }
 const deleteFilm= async(token:string, id:string): Promise<any>=>{
@@ -163,11 +164,13 @@ const deleteFilm= async(token:string, id:string): Promise<any>=>{
     }
     query = 'select id from user where auth_token=?'
     const[directorInfo] = await conn.query(query, [token]);
-    if (directorInfo.id !== filmInfo[0].director_id){
+    if (directorInfo[0].id !== filmInfo[0].director_id){
         Logger.http ('not director')
         return 403;
     }
-    fs.rmSync(`./storage/images/${filmInfo[0].image_filename}`);
+    if (filmInfo[0].film_image!=null) {
+        fs.rmSync(`./storage/images/${filmInfo[0].image_filename}`);
+    }
     await conn.query('delete from film where id =?', [id]);
     return 200;
 }
