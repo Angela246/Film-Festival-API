@@ -12,7 +12,7 @@ const viewAll = async (req: Request, res: Response): Promise<void> => {
         return;
     }
     try{
-        // const result = await film.viewAllFilm(req.query);
+        const result = await film.viewAllFilm(req.query);
         // Your code goes here
         res.statusMessage = "Not Implemented Yet!";
         res.status(501).send();
