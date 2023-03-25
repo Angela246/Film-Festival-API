@@ -15,6 +15,11 @@ const validate = async (schemas:object,data:any)=>{
     }
 }
 
+function validateSqlDatetime(dateTimeString:string) {
+    const sqlDatetimeRegex = /\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}/;
+    return sqlDatetimeRegex.test(dateTimeString);
+}
+
 const validateEmail = async(email:string): Promise<any> => {
     const emailRegex = /(([a-z]|[0-9])+(([.])([a-z]|[0-9])+)*([@])([a-z]|[0-9])+(([.])([a-z]|[0-9])+)+)/;
     if (email.match(emailRegex)) {
@@ -31,4 +36,4 @@ const validateEmail = async(email:string): Promise<any> => {
 const randomToken = async (x: number) : Promise<any> =>{
     return randToken.generate(x);
 };
-export{validate,validateEmail,randomToken}
+export{validate,validateEmail,randomToken,validateSqlDatetime}
