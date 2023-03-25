@@ -18,7 +18,7 @@ const addReviews = async(rating:number, review:string, id:string,token:string): 
     const conn = await getPool().getConnection();
     // When user is logged out, token is suppose to be null but it's coming up as not null
     Logger.http(`imageType: ${token}`)
-    if (token === null) {
+    if (token === undefined) {
         return 401;
     }
     let query = 'select id from user where auth_token=?';
@@ -35,7 +35,7 @@ const addReviews = async(rating:number, review:string, id:string,token:string): 
     query = 'insert into film_review (film_id, user_id, rating, review, timestamp) values (?,?,?,?,?)';
     const [insertReview]= await conn.query(query,[id, result[0].id, rating,review,timestamp]);
     conn.release();
-    return insertReview;
+    return insertReview.insertId;
 }
 
 export{getReviews,addReviews}

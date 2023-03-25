@@ -2,55 +2,48 @@ import { getPool } from '../../config/db';
 import Logger from '../../config/logger';
 import fs from "mz/fs";
 
-const viewAllFilm = async(queryBody:any) : Promise<any> =>{
+const viewAllFilm = async(query:any) : Promise<any> =>{
     Logger.info ("Getting all film from the database");
     const conn = await getPool().getConnection();
-    const query='select film.id as filmId, film.title, film.genre_id as genreId, film.age_rating as ' +
+    let filmQuery='select film.id as filmId, film.title, film.genre_id as genreId, film.age_rating as ' +
         'ageRating, film.director_id as directorId, user.first_name as directorFirstName,user.last_name as directorLastName, ' +
         '(select avg(rating) from film_review where film_review.film_id = film.id) as rating,film.release_date ' +
         'as releaseDate from film join film_review on film.id = film_review.film_id join user on film.director_id = user.id'
 
     const [result] = await conn.query(query);
     Logger.info(`Viewing user with id: ${result[0].genre_id}`)
-    return result[0]
-    //
-    // if (query.directorId !== undefined ||query.reviewerId!==undefined||query.sortBy!==undefined||query.genreId!==undefined||query.q!==undefined){
-    //     filmQuery+= 'where';
-    // }
-    //
-    // if (query.directorId!==undefined){
-    //     filmQuery+= '(film.director_id = ? ) and '
-    // }
-    //
-    // if (query.reviewerId!==undefined){
-    //     filmQuery +='(film_review.user_id =?) and '
-    // }
-    //
-    // if (query.genreId!==undefined){
-    //     filmQuery+='(film.genre_id = ? '
-    // }
-    //
-    // if (query.q!== undefined) {
-    //     if (!(filmQuery.endsWith('AND'))) {
-    //         filmQuery += 'and';
-    //     }
-    //     filmQuery+='title like %?% or description like %?% and '
-    //
-    // }
-    //
-    // if (filmQuery.endsWith('AND ')){
-    //     filmQuery = filmQuery.slice(0,-4);
-    // }
-    //
-    // filmQuery += 'GROUP by film.id '
-    // const sortMapping = {
-    //     ALPHABETICAL_ASC: "title ASC",
-    //     ALPHABETICAL_DESC: "title DESC",
-    //     RELEASED_ASC: "release_date ASC",
-    //     RELEASED_DESC: "release_date DESC",
-    //     RATING_ASC: "rating ASC",
-    //     RATING_DESC: "rating DESC",
-    // }
+
+    if (query.directorId !== undefined ||query.reviewerId!==undefined||query.sortBy!==undefined||query.genreId!==undefined||query.q!==undefined){
+        filmQuery+= 'where';
+    }
+    if (query.directorId!==undefined){
+        filmQuery+= `(film.director_id = ${query.directorId}) and `
+    }
+    if (query.reviewerId!==undefined){
+        filmQuery +=`(film_review.user_id =${query.reviewerId}) and `
+    }
+    if (query.genreId!==undefined){
+        filmQuery+='(film.genre_id = ' + query.genreId
+    }
+    if (query.q!== undefined) {
+        if (!(filmQuery.endsWith('AND'))) {
+            filmQuery += 'and';
+        }
+        filmQuery+=`title like %${query.q}% or description like %${query.q}% and `
+    }
+    if (filmQuery.endsWith('AND ')){
+        filmQuery = filmQuery.slice(0,-4);
+    }
+    const sortMapping = {
+        ALPHABETICAL_ASC: "title ASC",
+        ALPHABETICAL_DESC: "title DESC",
+        RELEASED_ASC: "release_date ASC",
+        RELEASED_DESC: "release_date DESC",
+        RATING_ASC: "rating ASC",
+        RATING_DESC: "rating DESC",
+    }
+    filmQuery += 'GROUP by film.id ';
+    filmQuery+='sort by ' + query.sortBy;
 
 }
 

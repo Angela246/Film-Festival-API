@@ -33,7 +33,6 @@ const getImage = async (req: Request, res: Response): Promise<void> => {
 }
 const setImage = async (req: Request, res: Response): Promise<void> => {
     const token= req.header("X-Authorization");
-    // TODO No contentType in the header for set image files
     const contentType = req.headers['content-type'];
     logger.info(`${JSON.stringify(req.headers)}`);
     try{
