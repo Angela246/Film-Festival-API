@@ -13,10 +13,7 @@ const viewAll = async (req: Request, res: Response): Promise<void> => {
     }
     try{
         const result = await film.viewAllFilm(req.query);
-        // Your code goes here
-        res.statusMessage = "Not Implemented Yet!";
-        res.status(501).send();
-        return;
+        res.status( 200 ).send( result );
     } catch (err) {
         Logger.error(err);
         res.statusMessage = "Internal Server Error";

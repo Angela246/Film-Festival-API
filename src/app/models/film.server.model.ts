@@ -5,35 +5,39 @@ import fs from "mz/fs";
 const viewAllFilm = async(query:any) : Promise<any> =>{
     Logger.info ("Getting all film from the database");
     const conn = await getPool().getConnection();
+    Logger.info ("testing 1");
     let filmQuery='select film.id as filmId, film.title, film.genre_id as genreId, film.age_rating as ' +
         'ageRating, film.director_id as directorId, user.first_name as directorFirstName,user.last_name as directorLastName, ' +
         '(select avg(rating) from film_review where film_review.film_id = film.id) as rating,film.release_date ' +
         'as releaseDate from film join film_review on film.id = film_review.film_id join user on film.director_id = user.id'
-
-    const [result] = await conn.query(query);
-    Logger.info(`Viewing user with id: ${result[0].genre_id}`)
-
+    Logger.info ("testing 2");
     if (query.directorId !== undefined ||query.reviewerId!==undefined||query.sortBy!==undefined||query.genreId!==undefined||query.q!==undefined){
-        filmQuery+= 'where';
+        Logger.info('test 1')
+        filmQuery+= ' where';
     }
     if (query.directorId!==undefined){
         filmQuery+= `(film.director_id = ${query.directorId}) and `
+        Logger.info('test 2')
     }
     if (query.reviewerId!==undefined){
         filmQuery +=`(film_review.user_id =${query.reviewerId}) and `
+        Logger.info('test 3')
     }
     if (query.genreId!==undefined){
         filmQuery+='(film.genre_id = ' + query.genreId
+        Logger.info('test 4')
     }
     if (query.q!== undefined) {
-        if (!(filmQuery.endsWith('AND'))) {
-            filmQuery += 'and';
-        }
-        filmQuery+=`title like %${query.q}% or description like %${query.q}% and `
+        // if (!(filmQuery.endsWith(' and'))) {
+        //     filmQuery += ' and';
+        //     Logger.info('test 5')
+        // }
+        filmQuery+=` title like '%${query.q}%' or description like '%${query.q}%' and `
     }
-    if (filmQuery.endsWith('AND ')){
+    if (filmQuery.endsWith('and ')){
         filmQuery = filmQuery.slice(0,-4);
     }
+
     const sortMapping = {
         ALPHABETICAL_ASC: "title ASC",
         ALPHABETICAL_DESC: "title DESC",
@@ -43,9 +47,32 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
         RATING_DESC: "rating DESC",
     }
     filmQuery += 'GROUP by film.id ';
-    filmQuery+='sort by ' + query.sortBy;
+    if (query.sortBy===undefined){
+        Logger.info('testing')
+        filmQuery += 'order by release_date ASC';
+        // Logger.info(`${filmQuery}`)
+    }
+    else {
+        filmQuery += 'ORDER BY ' + sortMapping[query.sortBy as keyof typeof sortMapping];
+    }
 
-}
+    Logger.info(`${filmQuery}`)
+    const [ rows ] = await conn.query( filmQuery );
+    conn.release();
+    let startIndex = query.startIndex;
+    if (query.startIndex === undefined) {
+        startIndex = 0;
+    }
+    if (rows !== undefined) {
+        if (query.count !== undefined) {
+            return JSON.stringify({'films': rows.slice(startIndex, startIndex + query.count), 'count': rows.length});
+        } else {
+            return JSON.stringify({'films': rows.slice(startIndex), 'count': rows.length});
+        }
+    } else {
+        return JSON.stringify({films: rows});
+    }
+};
 
 const getFilm = async(id:string): Promise<any>=>{
     const conn = await getPool().getConnection();
