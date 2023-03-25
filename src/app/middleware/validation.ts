@@ -29,9 +29,6 @@ const validateEmail = async(email:string): Promise<any> => {
     }
 }
 
-// const validationImageType= async()
-
-// authorisation
 
 const randomToken = async (x: number) : Promise<any> =>{
     return randToken.generate(x);
