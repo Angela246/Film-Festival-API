@@ -5,7 +5,10 @@ import * as validation from '../middleware/validation';
 import * as schema from "../resources/schemas.json";
 
 const viewAll = async (req: Request, res: Response): Promise<void> => {
-    const validationInput = await validation.validate( schema.film_search,req.body);
+    const validationInput = await validation.validate(schema.film_search,req.query);
+    Logger.info(`count index ${req.query.count}`)
+    // TODO invalid countIndex and startIndex is not failing
+    // TODO invalid genreId is failing
     if (validationInput!==true){
         res.statusMessage=`Bad Request: ${validationInput.toString()}`;
         res.status(400).send();

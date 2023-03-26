@@ -8,10 +8,10 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
     Logger.info ("testing 1");
     let filmQuery='select film.id as filmId, film.title, film.genre_id as genreId, film.age_rating as ' +
         'ageRating, film.director_id as directorId, user.first_name as directorFirstName,user.last_name as directorLastName, ' +
-        '(select avg(rating) from film_review where film_review.film_id = film.id) as rating,film.release_date ' +
-        'as releaseDate from film join film_review on film.id = film_review.film_id join user on film.director_id = user.id'
+        ' cast((select round(avg(rating),1) from film_review where film_review.film_id = film.id)as float) as rating,film.release_date ' +
+        'as releaseDate from film left join film_review on film.id = film_review.film_id left join user on film.director_id = user.id'
     Logger.info ("testing 2");
-    if (query.directorId !== undefined ||query.reviewerId!==undefined||query.sortBy!==undefined||query.genreId!==undefined||query.q!==undefined){
+    if (query.directorId !== undefined ||query.reviewerId!==undefined||query.sortBy!==undefined||query.genreIds!==undefined||query.q!==undefined){
         Logger.info('test 1')
         filmQuery+= ' where';
     }
@@ -23,15 +23,11 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
         filmQuery +=`(film_review.user_id =${query.reviewerId}) and `
         Logger.info('test 3')
     }
-    if (query.genreId!==undefined){
-        filmQuery+='(film.genre_id = ' + query.genreId
+    if (query.genreIds!==undefined){
+        filmQuery+='(film.genre_id = ' + query.genreIds + ')';
         Logger.info('test 4')
     }
     if (query.q!== undefined) {
-        // if (!(filmQuery.endsWith(' and'))) {
-        //     filmQuery += ' and';
-        //     Logger.info('test 5')
-        // }
         filmQuery+=` title like '%${query.q}%' or description like '%${query.q}%' and `
     }
     if (filmQuery.endsWith('and ')){
@@ -46,11 +42,14 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
         RATING_ASC: "rating ASC",
         RATING_DESC: "rating DESC",
     }
-    filmQuery += 'GROUP by film.id ';
+
+    if (filmQuery.endsWith('where')){
+        filmQuery = filmQuery.slice(0,-5);
+    }
+    filmQuery += ' GROUP by film.id ';
     if (query.sortBy===undefined){
         Logger.info('testing')
         filmQuery += 'order by release_date ASC';
-        // Logger.info(`${filmQuery}`)
     }
     else {
         filmQuery += 'ORDER BY ' + sortMapping[query.sortBy as keyof typeof sortMapping];
@@ -91,7 +90,7 @@ const getFilm = async(id:string): Promise<any>=>{
         reviewCount[0].ratingAverage=0;
     }
     Logger.http (`Reach this part? ${reviewCount[0].ratingAverage}`)
-    return {filmId:filmInfo[0].id, title: filmInfo[0].title, genreId: filmInfo[0].genre_id, ageRating:filmInfo[0].age_rating, directorId:filmInfo[0].director_id, directorFirstName:directorInfo[0].first_name, directorLastName:directorInfo[0].last_name,rating:parseFloat(reviewCount[0].ratingAverage), releaseDate:filmInfo[0].release_date, description:filmInfo[0].description, runtime: filmInfo[0].runtime, numReviews:reviewCount[0].numReview }
+    return {filmId:filmInfo[0].id, title: filmInfo[0].title, genreIds: filmInfo[0].genre_id, ageRating:filmInfo[0].age_rating, directorId:filmInfo[0].director_id, directorFirstName:directorInfo[0].first_name, directorLastName:directorInfo[0].last_name,rating:parseFloat(reviewCount[0].ratingAverage), releaseDate:filmInfo[0].release_date, description:filmInfo[0].description, runtime: filmInfo[0].runtime, numReviews:reviewCount[0].numReview }
 
 }
 
