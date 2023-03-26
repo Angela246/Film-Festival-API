@@ -16,6 +16,11 @@ const viewAll = async (req: Request, res: Response): Promise<void> => {
     }
     try{
         const result = await film.viewAllFilm(req.query);
+
+        if (result===400){
+            res.status(400).send();
+            return
+        }
         res.status( 200 ).send( result );
     } catch (err) {
         Logger.error(err);
