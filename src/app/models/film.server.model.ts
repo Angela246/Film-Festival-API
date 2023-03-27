@@ -8,7 +8,7 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
     const conn = await getPool().getConnection();
     let filmQuery='select film.id as filmId, film.title, film.genre_id as genreId, film.age_rating as ' +
         'ageRating, film.director_id as directorId, user.first_name as directorFirstName,user.last_name as directorLastName, ' +
-        ' cast((select round(avg(rating),1) from film_review where film_review.film_id = film.id)as float) as rating,film.release_date ' +
+        ' (select avg(rating) from film_review where film_review.film_id = film.id) as rating,film.release_date ' +
         'as releaseDate from film left join film_review on film.id = film_review.film_id left join user on film.director_id = user.id'
     if (query.directorId !== undefined ||query.reviewerId!==undefined||query.sortBy!==undefined||query.genreIds!==undefined||query.q!==undefined|| query.ageRatings!==undefined){
         filmQuery+= ' where';
@@ -125,7 +125,26 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
     }
 
     Logger.info(`${filmQuery}`)
-    const [ rows ] = await conn.query( filmQuery );
+
+    interface Films {
+        filmId: number;
+        title: string;
+        genreId: number;
+        ageRating: string;
+        directorId: number;
+        directorFirstName: string;
+        directorLastName: string;
+        rating: number | null;
+        releaseDate: string;
+    }
+
+    const [rows]: [Films[]] = await conn.query(filmQuery);
+
+    rows.forEach((row: Films) => {
+        row.rating = row.rating ?? 0;
+        const ratingStr = Math.round(row.rating * 100) / 100;
+        row.rating = parseFloat(ratingStr.toFixed(2));
+    });
     conn.release();
     let startIndex = query.startIndex;
     if (query.startIndex === undefined) {
@@ -208,6 +227,15 @@ const addFilm= async(token:string, body:any): Promise<any>=>{
 }
 const editFilm = async(token:string, body:any, id:string): Promise <any> =>{
     Logger.http(`token is ${token}`)
+    interface UpdatedBody {
+        title?:string
+        release_date?:string,
+        description?: string,
+        genre_id?: number; // Use "?" to make it optional
+        runtime?: number;
+        age_rating?: string;
+    }
+    const updatedBody: UpdatedBody = {};
     if (!token){
         return 401;
     }
@@ -221,21 +249,37 @@ const editFilm = async(token:string, body:any, id:string): Promise <any> =>{
         Logger.http ('unauthorised')
         return 403;
     }
-
     if (body.genreId){
+        updatedBody.genre_id = body.genreId;
         query = 'select * from genre where id=?'
         const[genreExist] = await conn.query(query, body.genreId);
         if (!genreExist[0]){
             return 400;
         }
     }
+    if (body.title){
+        updatedBody.title = body.title;
+    }
+    if (body.description){
+        updatedBody.description = body.description;
+    }
+
+    if (body.releaseDate){
+        updatedBody.release_date = body.releaseDate;
+    }
+    if (body.ageRating){
+        updatedBody.age_rating = body.ageRating;
+    }
+
     query = 'select count(*) from film_review where film_id =?'
     const[countReviews] = await conn.query(query, [id]);
     if (countReviews[0].count>0){
         Logger.http ('has reviews')
         return 403;
     }
-    filmAuthorization[0] = Object.assign(filmAuthorization[0], body);
+    Logger.info(JSON.stringify(filmAuthorization[0]))
+    Logger.info(JSON.stringify(body))
+    filmAuthorization[0] = Object.assign(filmAuthorization[0], updatedBody);
     query ='update film set title =?, description =?, release_date =?, image_filename =?, runtime=?, director_id=?, genre_id =?, age_rating=? where id =?'
     await conn.query(query, [filmAuthorization[0].title, filmAuthorization[0].description, filmAuthorization[0].release_date, filmAuthorization[0].image_filename, filmAuthorization[0].runtime, filmAuthorization[0].director_id, filmAuthorization[0].genre_id, filmAuthorization[0].age_rating, id]);
     return 200;

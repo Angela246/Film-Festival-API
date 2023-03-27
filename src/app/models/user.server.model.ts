@@ -80,6 +80,13 @@ const view = async(id:string, token:string): Promise<any>=>{
 }
 
 const update = async(id:string, token:string, body:any ): Promise<any>=>{
+    interface UpdatedBody {
+        email?: string
+        first_name?: string,
+        last_name?: string,
+        password?: string;
+    }
+    const updatedBody: UpdatedBody = {};
     const conn = await getPool().getConnection();
     if (!token) {
         return 401;
@@ -93,6 +100,7 @@ const update = async(id:string, token:string, body:any ): Promise<any>=>{
         return 403;
     }
     if (body.email){
+        updatedBody.email = body.email;
         query= 'select * from user where email = ?'
         const[emailQuery]= await conn.query(query,[body.email]);
         if (emailQuery[0]){
@@ -104,9 +112,16 @@ const update = async(id:string, token:string, body:any ): Promise<any>=>{
             return 401;
         }
         body.password = await passwords.hash(body.password)
+        updatedBody.password = body.password
         delete body.currentPassword;
     }
-    currentUser[0]=  Object.assign(currentUser[0], body);
+    if (body.firstName){
+        updatedBody.first_name = body.firstName;
+    }
+    if (body.lastName){
+        updatedBody.last_name = body.lastName;
+    }
+    currentUser[0]=  Object.assign(currentUser[0], updatedBody);
     query = 'update user set email =?, first_name =?, last_name = ?, password =? where id =?'
     await conn.query(query, [currentUser[0].email, currentUser[0].first_name, currentUser[0].last_name, currentUser[0].password,id]);
     return 200;
