@@ -40,7 +40,6 @@ const setFilmImage = async (id: string,image:any, token:string, contentType:stri
     else if (token !== result[0].auth_token){
         return 403;
     }
-    // TODO not being added to storage
     const imageName = `film_${id}.${imageType}`
     query ='update film set image_filename =? where id =?';
     await conn.query(query,[imageName,id]);

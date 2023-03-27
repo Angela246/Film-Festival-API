@@ -7,8 +7,6 @@ import * as schema from "../resources/schemas.json";
 const viewAll = async (req: Request, res: Response): Promise<void> => {
     const validationInput = await validation.validate(schema.film_search,req.query);
     Logger.info(`count index ${req.query.count}`)
-    // TODO invalid countIndex and startIndex is not failing
-    // TODO invalid genreId is failing
     if (validationInput!==true){
         res.statusMessage=`Bad Request: ${validationInput.toString()}`;
         res.status(400).send();
@@ -57,12 +55,6 @@ const addOne = async (req: Request, res: Response): Promise<void> => {
         res.status(400).send();
         return;
     }
-    // const validateReleaseDate=  await validation.validateSqlDatetime(req.body.releaseDate);
-    // if (validateReleaseDate===false){
-    //     res.statusMessage=`Bad Request: invalid releaseDate`;
-    //     res.status(400).send();
-    //     return;
-    // }
     try{
         const result = await film.addFilm(token, req.body);
 
@@ -95,7 +87,6 @@ const addOne = async (req: Request, res: Response): Promise<void> => {
 }
 
 const editOne = async (req: Request, res: Response): Promise<void> => {
-    // TODO failing (title and description) patch
     const token= req.header("X-Authorization");
     Logger.http(`token is ${req.body.releaseDate}`)
     const validationInput = await validation.validate( schema.film_patch,req.body);
@@ -105,13 +96,6 @@ const editOne = async (req: Request, res: Response): Promise<void> => {
         return;
     }
     Logger.http(`testing here`)
-    // const validateReleaseDate = await validation.validateSqlDatetime("2026-01ty-01 00:0yt0:00");
-    // Logger.http(`testing there ${validateReleaseDate}`)
-    // if (validateReleaseDate===false) {
-    //     res.statusMessage = `Bad Request: invalid releaseDate`;
-    //     res.status(400).send();
-    //     return;
-    // }
 
     try{
         const result = await film.editFilm(token, req.body, req.params.id);

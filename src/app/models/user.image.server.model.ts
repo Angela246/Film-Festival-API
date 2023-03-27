@@ -18,7 +18,6 @@ const getImageString = async (id: string) : Promise<any> => {
         return [image, extension];
     }
 }
-
 const setImageString = async (id: string,image:any, token:string, contentType:string) : Promise<any> =>{
     const extension = contentType.split("/");
     const imageType= extension[1];
@@ -41,9 +40,9 @@ const setImageString = async (id: string,image:any, token:string, contentType:st
         return 403;
     }
     const imageName= `user_${id}.${imageType}`;
+    Logger.info(`Image name is ${imageName}`)
     query= 'update user set image_filename = ? where id =?';
-    const [updateImage] = await conn.query(query,[imageName,id]);
-    // Image not storing in here
+    await conn.query(query,[imageName,id]);
     fs.writeFileSync(`./storage/images/${imageName}`,image);
     if (result[0].image_filename == null){
         conn.release();

@@ -12,7 +12,8 @@ const getReviews = async (id: string) : Promise<any> => {
     return result;
 }
 
-// TODO no authorisation
+
+// TODO ERROR duplicate entry for film-id
 
 const addReviews = async(rating:number, review:string, id:string,token:string): Promise<any> => {
     const conn = await getPool().getConnection();
