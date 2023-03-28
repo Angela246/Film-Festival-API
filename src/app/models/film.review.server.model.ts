@@ -12,31 +12,30 @@ const getReviews = async (id: string) : Promise<any> => {
     return result;
 }
 
-
-// TODO ERROR duplicate entry for film-id
-
 const addReviews = async(rating:number, review:string, id:string,token:string): Promise<any> => {
     const conn = await getPool().getConnection();
-    // When user is logged out, token is suppose to be null but it's coming up as not null
-    Logger.http(`imageType: ${token}`)
     if (token === undefined) {
         return 401;
     }
-    let query = 'select id from user where auth_token=?';
-    const [result] = await conn.query(query, [token]);
+    Logger.info(token)
+    let query = 'select * from user where auth_token=?';
+    const [userValidation] = await conn.query(query, [token]);
     query = 'select director_id from film where id =?';
-    const [results] = await conn.query(query, [parseInt(id,10)]);
-    if (results[0] === undefined) {
+    Logger.http(`testing 1`)
+    const [directorValidation] = await conn.query(query, [parseInt(id,10)]);
+    if (directorValidation[0] === undefined) {
         return 404;
     }
-    if (results[0].director_id === result[0].id) {
+    Logger.http(`testing 2 ${userValidation}`)
+    if (directorValidation[0].director_id === userValidation[0].id) {
         return 403;
     }
+    Logger.http(`testing 3`)
     const timestamp = new Date();
     query = 'insert into film_review (film_id, user_id, rating, review, timestamp) values (?,?,?,?,?)';
-    const [insertReview]= await conn.query(query,[id, result[0].id, rating,review,timestamp]);
+    const [insertReview]= await conn.query(query,[id, userValidation[0].id, rating,review,timestamp]);
     conn.release();
-    return insertReview.insertId;
+    return;
 }
 
 export{getReviews,addReviews}

@@ -121,7 +121,7 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
         filmQuery += 'order by release_date ASC';
     }
     else {
-        filmQuery += 'ORDER BY ' + sortMapping[query.sortBy as keyof typeof sortMapping];
+        filmQuery += 'ORDER BY ' + sortMapping[query.sortBy as keyof typeof sortMapping] +', film.id';
     }
 
     Logger.info(`${filmQuery}`)
@@ -188,7 +188,6 @@ const getGenre= async ()=>{
     return result;
 }
 
-// TODO add own validation for release date
 
 const addFilm= async(token:string, body:any): Promise<any>=>{
     const conn = await getPool().getConnection();
@@ -218,7 +217,7 @@ const addFilm= async(token:string, body:any): Promise<any>=>{
     const[authorizeUser] = await conn.query(query, [token]);
 
     if (authorizeUser[0]===undefined){
-        return 401;
+        return 401
     }
     query='insert into film  (title, description,release_date,runtime,genre_id, age_rating, director_id ) values(?,?,?,?,?,?,?)'
     const[insertFilm] = await conn.query(query, [body.title,body.description, body.releaseDate, body.runtime,body.genreId,body.ageRating,authorizeUser[0].id]);
@@ -252,23 +251,33 @@ const editFilm = async(token:string, body:any, id:string): Promise <any> =>{
     if (body.genreId){
         updatedBody.genre_id = body.genreId;
         query = 'select * from genre where id=?'
-        const[genreExist] = await conn.query(query, body.genreId);
+        const[genreExist] = await conn.query(query, [body.genreId]);
         if (!genreExist[0]){
             return 400;
         }
     }
     if (body.title){
+        query= "select * from film_review where film_id =?"
+        const [checkReview] = await conn.query(query,id )
+        if (checkReview !== undefined){
+            return 403;
+        }
         updatedBody.title = body.title;
     }
     if (body.description){
         updatedBody.description = body.description;
     }
-
     if (body.releaseDate){
+        if (new Date(filmAuthorization[0].release_date).getTime()<new Date (body.releaseDate).getTime()){
+            return 403;
+        }
         updatedBody.release_date = body.releaseDate;
     }
     if (body.ageRating){
         updatedBody.age_rating = body.ageRating;
+    }
+    if (body.runtime){
+        updatedBody.runtime= body.runtime;
     }
 
     query = 'select count(*) from film_review where film_id =?'
@@ -277,11 +286,10 @@ const editFilm = async(token:string, body:any, id:string): Promise <any> =>{
         Logger.http ('has reviews')
         return 403;
     }
-    Logger.info(JSON.stringify(filmAuthorization[0]))
-    Logger.info(JSON.stringify(body))
     filmAuthorization[0] = Object.assign(filmAuthorization[0], updatedBody);
     query ='update film set title =?, description =?, release_date =?, image_filename =?, runtime=?, director_id=?, genre_id =?, age_rating=? where id =?'
     await conn.query(query, [filmAuthorization[0].title, filmAuthorization[0].description, filmAuthorization[0].release_date, filmAuthorization[0].image_filename, filmAuthorization[0].runtime, filmAuthorization[0].director_id, filmAuthorization[0].genre_id, filmAuthorization[0].age_rating, id]);
+    Logger.info(query)
     return 200;
 }
 const deleteFilm= async(token:string, id:string): Promise<any>=>{
