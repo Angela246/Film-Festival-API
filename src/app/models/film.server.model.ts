@@ -2,6 +2,7 @@ import { getPool } from '../../config/db';
 import Logger from '../../config/logger';
 import fs from "mz/fs";
 import logger from "../../config/logger";
+import {info} from "winston";
 
 const viewAllFilm = async(query:any) : Promise<any> =>{
     Logger.info ("Getting all film from the database");
@@ -225,7 +226,7 @@ const addFilm= async(token:string, body:any): Promise<any>=>{
 
 }
 const editFilm = async(token:string, body:any, id:string): Promise <any> =>{
-    Logger.http(`token is ${token}`)
+    const conn = await getPool().getConnection();
     interface UpdatedBody {
         title?:string
         release_date?:string,
@@ -235,69 +236,76 @@ const editFilm = async(token:string, body:any, id:string): Promise <any> =>{
         age_rating?: string;
     }
     const updatedBody: UpdatedBody = {};
-    if (!token){
+    let query = 'select * from user where auth_token =?'
+    const [result]= await conn.query(query,[token]);
+    if (result[0]===undefined){
         return 401;
     }
-    const conn = await getPool().getConnection();
-    let query = 'select * from film join (select id, auth_token from user) as U on film.director_id= U.id where film.id =?'
-    const [filmAuthorization] = await conn.query(query, id);
-    if (!filmAuthorization[0]){
+    query='select * from film where id =?'
+    const[directorAuth]= await conn.query(query,[id])
+    if (directorAuth[0]===undefined){
         return 404;
     }
-    else if (filmAuthorization[0].auth_token!==token){
-        Logger.http ('unauthorised')
+    if (directorAuth[0].director_id!==result[0].id){
+        Logger.info('not director')
         return 403;
     }
-    if (body.genreId){
-        updatedBody.genre_id = body.genreId;
-        query = 'select * from genre where id=?'
-        const[genreExist] = await conn.query(query, [body.genreId]);
-        if (!genreExist[0]){
-            return 400;
-        }
-    }
-    if (body.title){
-        query= "select * from film_review where film_id =?"
-        const [checkReview] = await conn.query(query,id )
-        if (checkReview !== undefined){
-            return 403;
-        }
-        updatedBody.title = body.title;
-    }
-    if (body.description){
-        updatedBody.description = body.description;
-    }
-    if (body.releaseDate){
-        if (new Date(filmAuthorization[0].release_date).getTime()<new Date (body.releaseDate).getTime()){
-            return 403;
-        }
-        updatedBody.release_date = body.releaseDate;
-    }
-    if (body.ageRating){
-        updatedBody.age_rating = body.ageRating;
+    query ='select * from film_review where film_id = ?'
+    const[hasReviews] = await conn.query(query,[id])
+    if (hasReviews.length>0){
+        Logger.info('already has reviews')
+        return 403;
     }
     if (body.runtime){
         updatedBody.runtime= body.runtime;
     }
-
-    query = 'select count(*) from film_review where film_id =?'
-    const[countReviews] = await conn.query(query, [id]);
-    if (countReviews[0].count>0){
-        Logger.http ('has reviews')
-        return 403;
+    if (body.ageRating){
+        updatedBody.age_rating= body.ageRating;
     }
-    filmAuthorization[0] = Object.assign(filmAuthorization[0], updatedBody);
+    if (body.releaseDate){
+        if (Date.now()>new Date(body.releaseDate).getTime()) {
+            Logger.info('past date')
+            return 403;
+        }
+        else if (new Date(directorAuth[0].release_date).getTime()< new Date(body.releaseDate).getTime()){
+            Logger.info('release date pass')
+            return 403;
+        }
+        updatedBody.release_date = body.releaseDate;
+    }
+    if (body.title){
+        query='select * from film where title= ?'
+        const[title] = await conn.query(query,[body.title]);
+        if (title[0]!==undefined){
+            return 401;
+        }
+        updatedBody.title= body.title;
+    }
+    if (body.description){
+        updatedBody.description= body.description;
+    }
+    if (body.genreId){
+        query='select * from genre where id =?'
+        const[genreValid]= await conn.query(query,[body.genreId])
+        if (genreValid[0]===undefined){
+            return 400;
+        }
+        updatedBody.genre_id= body.genreId;
+    }
+    directorAuth[0] = Object.assign(directorAuth[0], updatedBody);
     query ='update film set title =?, description =?, release_date =?, image_filename =?, runtime=?, director_id=?, genre_id =?, age_rating=? where id =?'
-    await conn.query(query, [filmAuthorization[0].title, filmAuthorization[0].description, filmAuthorization[0].release_date, filmAuthorization[0].image_filename, filmAuthorization[0].runtime, filmAuthorization[0].director_id, filmAuthorization[0].genre_id, filmAuthorization[0].age_rating, id]);
+    await conn.query(query, [directorAuth[0].title, directorAuth[0].description, directorAuth[0].release_date, directorAuth[0].image_filename, directorAuth[0].runtime, directorAuth[0].director_id, directorAuth[0].genre_id, directorAuth[0].age_rating, id]);
     Logger.info(query)
     return 200;
 }
 const deleteFilm= async(token:string, id:string): Promise<any>=>{
-    if(!token){
+    const conn = await getPool().getConnection();
+    let query = 'select * from user where auth_token =?'
+    const [result]= await conn.query(query,[id]);
+    if (result===undefined){
         return 401;
     }
-    const conn = await getPool().getConnection();
-    let query = 'select * from film where id =?'
+     query = 'select * from film where id =?'
     const[filmInfo] = await conn.query (query, [id]);
     if (filmInfo[0]===undefined){
         return 404;

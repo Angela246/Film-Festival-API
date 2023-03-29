@@ -20,6 +20,7 @@ const viewAll = async (req: Request, res: Response): Promise<void> => {
             return
         }
         res.status( 200 ).send( result );
+        return;
     } catch (err) {
         Logger.error(err);
         res.statusMessage = "Internal Server Error";
@@ -115,6 +116,7 @@ const editOne = async (req: Request, res: Response): Promise<void> => {
             return
         }
         res.status(200).send();
+        return;
 
     } catch (err) {
         Logger.error(err);

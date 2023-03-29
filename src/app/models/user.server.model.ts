@@ -20,7 +20,7 @@ const register = async(email:string, firstname:string, lastname:string, password
         return null;
     }
 };
-const login =async(email:string, password:string, token:string) : Promise<any> => {
+const login =async(email:string, password:string, authToken:string) : Promise<any> => {
     const conn = await getPool().getConnection();
     let query = 'select id, password from user where email = ?';
     const [users]= await conn.query(query,[email]);
@@ -32,9 +32,9 @@ const login =async(email:string, password:string, token:string) : Promise<any> =
         return null;
     } else{
         query='update user set auth_token =? where id =? and email =?';
-        await conn.query(query, [token, users[0].id, email]);
+        await conn.query(query, [authToken, users[0].id, email]);
         await conn.release();
-        return {userId:users[0].id, token};
+        return {userId:users[0].id, token:authToken};
     }
 }
 
