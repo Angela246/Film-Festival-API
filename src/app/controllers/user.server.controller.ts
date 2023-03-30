@@ -23,6 +23,7 @@ const register = async (req: Request, res: Response): Promise<void> => {
             const result = await users.register(req.body.email,req.body.firstName,req.body.lastName,req.body.password);
             if (result!=null){
                 res.status (201).send({userId :result});
+                return;
             }
             else{
                 res.status(403).send("Forbidden. Email already in use");
@@ -58,6 +59,7 @@ const login = async (req: Request, res: Response): Promise<void> => {
         }
         else {
             res.status(200).send(result);
+            return;
         }
     } catch (err) {
         Logger.error(err);
@@ -74,6 +76,7 @@ const logout = async (req: Request, res: Response): Promise<void> => {
         if (response == null){
             res.statusMessage = "Unauthorized. Cannot log out if you are not authenticated";
             res.status(401).send();
+            return;
         }
         res.status(200).send();
         return;

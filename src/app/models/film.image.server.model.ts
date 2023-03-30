@@ -35,9 +35,11 @@ const setFilmImage = async (id: string,image:any, token:string, contentType:stri
     let query = 'select film.image_filename, user.auth_token from user join film on user.id = film.director_id where film.id =?'
     const [result] = await conn.query (query, [id]);
     if (result[0]===undefined){
+        conn.release();
         return 404;
     }
     else if (token !== result[0].auth_token){
+        conn.release();
         return 403;
     }
     const imageName = `film_${id}.${imageType}`

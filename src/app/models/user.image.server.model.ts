@@ -40,7 +40,6 @@ const setImageString = async (id: string,image:any, token:string, contentType:st
         return 403;
     }
     const imageName= `user_${id}.${imageType}`;
-    Logger.info(`Image name is ${imageName}`)
     query= 'update user set image_filename = ? where id =?';
     await conn.query(query,[imageName,id]);
     fs.writeFileSync(`./storage/images/${imageName}`,image);
@@ -57,9 +56,11 @@ const deleteImageString = async (id: string, token:string) : Promise<any> => {
     const query = 'select image_filename, auth_token from user where id =?'
     const [result] = await conn.query(query, [id]);
     if (result[0]===undefined || result[0].image_filename==null){
+        conn.release();
         return 404;
     }
     else if (token !== result[0].auth_token){
+        conn.release();
         return 403;
     }
     fs.rmSync(`./storage/images/${result[0].image_filename}`);

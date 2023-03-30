@@ -15,13 +15,16 @@ const getImage = async (req: Request, res: Response): Promise<void> => {
         else if (imageResult[1]===".gif"){
             res.setHeader("Content-Type", "image/gif");
             res.status(200).send(imageResult[0]);
+            return;
         }
         else if (imageResult[1]===".jpg"||imageResult[1]===".jpeg"){
             res.setHeader("Content-Type", "image/jpeg");
             res.status(200).send(imageResult[0]);
+            return;
         }
         else{
             res.status(200).send(imageResult[0]);
+            return;
         }
 
     } catch (err) {
@@ -36,7 +39,6 @@ const setImage = async (req: Request, res: Response): Promise<void> => {
     const token= req.header("X-Authorization");
     const contentType = req.headers['content-type'];
     const extension = contentType.split("/");
-    Logger.info(`Reach this part?${extension[1]}`);
     try{
         const imageResult = await usersImage.setImageString(req.params.id, req.body, token,contentType)
         if (imageResult ===400){
@@ -64,12 +66,14 @@ const setImage = async (req: Request, res: Response): Promise<void> => {
         else if (imageResult === 200){
             res.statusMessage= "OK. Image updated"
             res.status(200).send();
+            return;
 
         }
 
         else if (imageResult === 201){
             res.statusMessage= "Created. New image created"
             res.status(201).send();
+            return;
         }
 
     } catch (err) {
@@ -102,6 +106,7 @@ const deleteImage = async (req: Request, res: Response): Promise<void> => {
         }
 
         res.status(200).send();
+        return;
 
     } catch (err) {
         Logger.error(err);

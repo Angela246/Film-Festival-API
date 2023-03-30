@@ -49,6 +49,7 @@ const addReview = async (req: Request, res: Response): Promise<void> => {
         }
         res.statusMessage="Created";
         res.status(201).send();
+        return;
 
     } catch (err) {
         Logger.error(err);

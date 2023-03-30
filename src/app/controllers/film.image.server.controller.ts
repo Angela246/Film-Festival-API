@@ -16,13 +16,16 @@ const getImage = async (req: Request, res: Response): Promise<void> => {
         else if (imageResult[1]===".gif"){
             res.setHeader("content-type", "image/gif");
             res.status(200).send(imageResult[0]);
+            return;
         }
         else if (imageResult[1]===".jpg"){
             res.setHeader("content-type", "image/jpeg");
             res.status(200).send(imageResult[0]);
+            return;
         }
         else{
             res.status(200).send(imageResult[0]);
+            return;
         }
     } catch (err) {
         Logger.error(err);
@@ -34,7 +37,6 @@ const getImage = async (req: Request, res: Response): Promise<void> => {
 const setImage = async (req: Request, res: Response): Promise<void> => {
     const token= req.header("X-Authorization");
     const contentType = req.headers['content-type'];
-    logger.info(`${JSON.stringify(req.headers)}`);
     try{
         const imageResult = await filmsImage.setFilmImage(req.params.id, req.body, token,contentType)
         if (imageResult ===400){
@@ -60,8 +62,10 @@ const setImage = async (req: Request, res: Response): Promise<void> => {
         if (imageResult ===201){
             res.statusMessage="Created";
             res.status(201).send();
+            return;
         }
         res.status(200).send();
+        return;
 
     } catch (err) {
         Logger.error(err);

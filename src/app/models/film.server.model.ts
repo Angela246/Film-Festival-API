@@ -5,7 +5,6 @@ import logger from "../../config/logger";
 import {info} from "winston";
 
 const viewAllFilm = async(query:any) : Promise<any> =>{
-    Logger.info ("Getting all film from the database");
     const conn = await getPool().getConnection();
     let filmQuery='select film.id as filmId, film.title, film.genre_id as genreId, film.age_rating as ' +
         'ageRating, film.director_id as directorId, user.first_name as directorFirstName,user.last_name as directorLastName, ' +
@@ -18,8 +17,8 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
     if (query.directorId!==undefined){
         validationQuery= 'select * from film where director_id =?'
         const [validationResult] = await conn.query(validationQuery,[query.directorId]);
-        Logger.info(`Validation result: ${JSON.stringify(validationResult)}`);
         if (validationResult[0]===undefined){
+            conn.release();
             return 400;
         }
         filmQuery+= `(film.director_id = ${query.directorId}) and `
@@ -28,6 +27,7 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
         validationQuery= 'select * from film_review where id =?'
         const [validationResult] = await conn.query(validationQuery,[query.reviewerId]);
         if (validationResult[0]===undefined){
+            conn.release();
             return 400;
         }
         filmQuery +=`(film_review.user_id =${query.reviewerId}) and `
@@ -42,8 +42,7 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
                 validationQuery= 'select * from film where age_rating =?'
                 const [validationResult] = await conn.query(validationQuery,[query.ageRatings[i]]);
                 if (validationResult[0]===undefined){
-                    Logger.info('reach here')
-                    Logger.info('bad request age rating list')
+                    conn.release();
                     return 400;
                 }
                 filmQuery += ` (film.age_rating = '${query.ageRatings[i]}' )`;
@@ -54,6 +53,7 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
             validationQuery= 'select * from film where age_rating =?'
             const [validation] = await conn.query(validationQuery,[query.ageRatings]);
             if (validation[0]===undefined){
+                conn.release();
                 return 400;
             }
             filmQuery+= ` (film.age_rating = ${query.ageRatings} )`
@@ -73,6 +73,7 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
                 validationQuery= 'select * from genre where id =?'
                 const [validationResult] = await conn.query(validationQuery,[query.genreIds[i]]);
                 if (validationResult[0]===undefined){
+                    conn.release();
                     return 400;
                 }
 
@@ -84,6 +85,7 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
             validationQuery= 'select * from genre where id =?'
             const [validation] = await conn.query(validationQuery,[query.genreIds]);
             if (validation[0]===undefined){
+                conn.release();
                 return 400;
             }
             filmQuery+= `(film.genre_id = ${query.genreIds} )`
@@ -157,10 +159,10 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
 
 const getFilm = async(id:string): Promise<any>=>{
     const conn = await getPool().getConnection();
-    Logger.info(`Reach this part? ${id}`);
     let query = 'select * from film where id=?'
     const[filmInfo] = await conn.query(query,[parseInt(id,10)]);
     if (filmInfo[0]===undefined){
+        conn.release();
         return 404;
     }
     query = 'select user.first_name, user.last_name from user where id=?'
@@ -168,10 +170,10 @@ const getFilm = async(id:string): Promise<any>=>{
 
     query ='select count(*) as numReview,round(avg(rating),1) as ratingAverage from film_review where film_id =?'
     const[reviewCount]= await conn.query(query, [id]);
+    conn.release();
     if (reviewCount[0].ratingAverage==null){
         reviewCount[0].ratingAverage=0;
     }
-    Logger.http (`Reach this part? ${reviewCount[0].ratingAverage}`)
     return {filmId:filmInfo[0].id, title: filmInfo[0].title, genreId: filmInfo[0].genre_id, ageRating:filmInfo[0].age_rating, directorId:filmInfo[0].director_id, directorFirstName:directorInfo[0].first_name, directorLastName:directorInfo[0].last_name,rating:parseFloat(reviewCount[0].ratingAverage), releaseDate:filmInfo[0].release_date, description:filmInfo[0].description, runtime: filmInfo[0].runtime, numReviews:reviewCount[0].numReview }
 
 }
@@ -179,6 +181,7 @@ const getFilm = async(id:string): Promise<any>=>{
 const getGenre= async ()=>{
     const conn = await getPool().getConnection();
     const [result]= await conn.query('select id as genreId,name from genre');
+    conn.release();
     return result;
 }
 
@@ -197,20 +200,24 @@ const addFilm= async(token:string, body:any): Promise<any>=>{
     let query = 'select * from genre where id =?'
     const[genreIdResult]= await conn.query(query, [body.genreId]);
     if (genreIdResult[0]===undefined){
+        conn.release();
         return 400;
     }
     if (Date.now()>new Date(body.releaseDate).getTime()){
+        conn.release();
         return 403;
     }
     query= 'select * from film where title =?'
     const[titleExist] = await conn.query(query,[body.title]);
     if (titleExist[0]!==undefined){
+        conn.release();
         return 403;
     }
     query= 'select * from user where auth_token = ?'
     const[authorizeUser] = await conn.query(query, [token]);
 
     if (authorizeUser[0]===undefined){
+        conn.release();
         return 401
     }
     query='insert into film  (title, description,release_date,runtime,genre_id, age_rating, director_id ) values(?,?,?,?,?,?,?)'
@@ -232,21 +239,23 @@ const editFilm = async(token:string, body:any, id:string): Promise <any> =>{
     let query = 'select * from user where auth_token =?'
     const [result]= await conn.query(query,[token]);
     if (result[0]===undefined){
+        conn.release();
         return 401;
     }
     query='select * from film where id =?'
     const[directorAuth]= await conn.query(query,[id])
     if (directorAuth[0]===undefined){
+        conn.release();
         return 404;
     }
     if (directorAuth[0].director_id!==result[0].id){
-        Logger.info('not director')
+        conn.release();
         return 403;
     }
     query ='select * from film_review where film_id = ?'
     const[hasReviews] = await conn.query(query,[id])
     if (hasReviews.length>0){
-        Logger.info('already has reviews')
+        conn.release();
         return 403;
     }
     if (body.runtime){
@@ -257,11 +266,11 @@ const editFilm = async(token:string, body:any, id:string): Promise <any> =>{
     }
     if (body.releaseDate){
         if (Date.now()>new Date(body.releaseDate).getTime()) {
-            Logger.info('past date')
+            conn.release();
             return 403;
         }
         else if (new Date(directorAuth[0].release_date).getTime()< new Date(body.releaseDate).getTime()){
-            Logger.info('release date pass')
+            conn.release();
             return 403;
         }
         updatedBody.release_date = body.releaseDate;
@@ -270,6 +279,7 @@ const editFilm = async(token:string, body:any, id:string): Promise <any> =>{
         query='select * from film where title= ?'
         const[title] = await conn.query(query,[body.title]);
         if (title[0]!==undefined){
+            conn.release();
             return 401;
         }
         updatedBody.title= body.title;
@@ -281,6 +291,7 @@ const editFilm = async(token:string, body:any, id:string): Promise <any> =>{
         query='select * from genre where id =?'
         const[genreValid]= await conn.query(query,[body.genreId])
         if (genreValid[0]===undefined){
+            conn.release();
             return 400;
         }
         updatedBody.genre_id= body.genreId;
@@ -288,7 +299,7 @@ const editFilm = async(token:string, body:any, id:string): Promise <any> =>{
     directorAuth[0] = Object.assign(directorAuth[0], updatedBody);
     query ='update film set title =?, description =?, release_date =?, image_filename =?, runtime=?, director_id=?, genre_id =?, age_rating=? where id =?'
     await conn.query(query, [directorAuth[0].title, directorAuth[0].description, directorAuth[0].release_date, directorAuth[0].image_filename, directorAuth[0].runtime, directorAuth[0].director_id, directorAuth[0].genre_id, directorAuth[0].age_rating, id]);
-    Logger.info(query)
+    conn.release();
     return 200;
 }
 const deleteFilm= async(token:string, id:string): Promise<any>=>{
@@ -296,23 +307,26 @@ const deleteFilm= async(token:string, id:string): Promise<any>=>{
     let query = 'select * from user where auth_token =?'
     const [result]= await conn.query(query,[id]);
     if (result===undefined){
+        conn.release();
         return 401;
     }
      query = 'select * from film where id =?'
     const[filmInfo] = await conn.query (query, [id]);
     if (filmInfo[0]===undefined){
+        conn.release();
         return 404;
     }
     query = 'select id from user where auth_token=?'
     const[directorInfo] = await conn.query(query, [token]);
     if (directorInfo[0].id !== filmInfo[0].director_id){
-        Logger.http ('not director')
+        conn.release();
         return 403;
     }
     if (filmInfo[0].film_image!=null) {
         fs.rmSync(`./storage/images/${filmInfo[0].image_filename}`);
     }
     await conn.query('delete from film where id =?', [id]);
+    conn.release();
     return 200;
 }
 

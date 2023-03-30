@@ -4,7 +4,6 @@ import {ResultSetHeader} from "mysql2";
 import * as passwords from '../middleware/password.hash';
 
 const register = async(email:string, firstname:string, lastname:string, password:string): Promise<ResultSetHeader> =>{
-    Logger.info(`Adding user to the database`);
     const conn = await getPool().getConnection();
     const query = 'insert into user (email, first_name,last_name, password) values ( ? )';
     const emailQuery ='select * from user where email =?';
@@ -17,6 +16,7 @@ const register = async(email:string, firstname:string, lastname:string, password
         return result.insertId;
     }
     else {
+        conn.release();
         return null;
     }
 };
@@ -39,7 +39,6 @@ const login =async(email:string, password:string, authToken:string) : Promise<an
 }
 
 const logout = async(token:string) : Promise<any> =>{
-    Logger.info(`Logging out user`);
     if (token == null){
         return null;
     }
@@ -47,7 +46,6 @@ const logout = async(token:string) : Promise<any> =>{
     let query = 'select * from user where auth_token = ?';
     const [users] = await conn.query(query, [token]);
     if (users[0]==null){
-        Logger.info(`Reach this part? ${token}`);
         await conn.release();
         return null;
     }
@@ -57,9 +55,7 @@ const logout = async(token:string) : Promise<any> =>{
     return result;
 }
 
-// header token is different from user token
 const view = async(id:string, token:string): Promise<any>=>{
-    Logger.info(`Viewing user details`);
     const conn = await getPool().getConnection();
     const query= 'select email,first_name,last_name,auth_token from user where id =?'
     const[users]=  await conn.query(query, [id]);
@@ -68,12 +64,10 @@ const view = async(id:string, token:string): Promise<any>=>{
         return null;
     }
     else if (users[0].auth_token!=null && users[0].auth_token===token){
-        Logger.info(`Reach this part 1? ${users[0].first_name}`);
         await conn.release();
         return {email:users[0].email, firstName:users[0].first_name, lastName:users[0].last_name};
     }
     else if (users[0].auth_token==null ){
-        Logger.info(`Reach this part 2? ${users[0].first_name}`);
         await conn.release();
         return {firstName: users[0].first_name, lastName: users[0].last_name};
     }
@@ -89,14 +83,17 @@ const update = async(id:string, token:string, body:any ): Promise<any>=>{
     const updatedBody: UpdatedBody = {};
     const conn = await getPool().getConnection();
     if (!token) {
+        conn.release();
         return 401;
     }
     let query = 'select * from user where id =?';
     const[currentUser] = await conn.query(query,[id]);
     if (!currentUser[0]){
+        conn.release();
         return 404;
     }
     if (currentUser[0].auth_token !==token || body.password === body.currentPassword){
+        conn.release();
         return 403;
     }
     if (body.email){
@@ -104,11 +101,13 @@ const update = async(id:string, token:string, body:any ): Promise<any>=>{
         query= 'select * from user where email = ?'
         const[emailQuery]= await conn.query(query,[body.email]);
         if (emailQuery[0]){
+            conn.release();
             return 400;
         }
     }
     if (body.password){
         if (! await passwords.checkPassword(body.currentPassword, currentUser[0].password)){
+            conn.release();
             return 401;
         }
         body.password = await passwords.hash(body.password)
@@ -124,6 +123,7 @@ const update = async(id:string, token:string, body:any ): Promise<any>=>{
     currentUser[0]=  Object.assign(currentUser[0], updatedBody);
     query = 'update user set email =?, first_name =?, last_name = ?, password =? where id =?'
     await conn.query(query, [currentUser[0].email, currentUser[0].first_name, currentUser[0].last_name, currentUser[0].password,id]);
+    conn.release();
     return 200;
 
 }
