@@ -20,7 +20,6 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
         const [validationResult] = await conn.query(validationQuery,[query.directorId]);
         Logger.info(`Validation result: ${JSON.stringify(validationResult)}`);
         if (validationResult[0]===undefined){
-            Logger.info('bad request director id')
             return 400;
         }
         filmQuery+= `(film.director_id = ${query.directorId}) and `
@@ -29,7 +28,6 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
         validationQuery= 'select * from film_review where id =?'
         const [validationResult] = await conn.query(validationQuery,[query.reviewerId]);
         if (validationResult[0]===undefined){
-            Logger.info('bad request reviewer id')
             return 400;
         }
         filmQuery +=`(film_review.user_id =${query.reviewerId}) and `
@@ -56,8 +54,6 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
             validationQuery= 'select * from film where age_rating =?'
             const [validation] = await conn.query(validationQuery,[query.ageRatings]);
             if (validation[0]===undefined){
-                Logger.info('reach here')
-                Logger.info('bad request age rating')
                 return 400;
             }
             filmQuery+= ` (film.age_rating = ${query.ageRatings} )`
@@ -77,7 +73,6 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
                 validationQuery= 'select * from genre where id =?'
                 const [validationResult] = await conn.query(validationQuery,[query.genreIds[i]]);
                 if (validationResult[0]===undefined){
-                    Logger.info('reach here')
                     return 400;
                 }
 
@@ -89,7 +84,6 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
             validationQuery= 'select * from genre where id =?'
             const [validation] = await conn.query(validationQuery,[query.genreIds]);
             if (validation[0]===undefined){
-                Logger.info('reach here')
                 return 400;
             }
             filmQuery+= `(film.genre_id = ${query.genreIds} )`
@@ -125,7 +119,6 @@ const viewAllFilm = async(query:any) : Promise<any> =>{
         filmQuery += 'ORDER BY ' + sortMapping[query.sortBy as keyof typeof sortMapping] +', film.id';
     }
 
-    Logger.info(`${filmQuery}`)
 
     interface Films {
         filmId: number;

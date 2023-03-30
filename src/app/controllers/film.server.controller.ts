@@ -6,8 +6,9 @@ import * as schema from "../resources/schemas.json";
 
 const viewAll = async (req: Request, res: Response): Promise<void> => {
     const validationInput = await validation.validate(schema.film_search,req.query);
-    Logger.info(`count index ${req.query.count}`)
+    // Logger.info(`count index ${req.query.count}`)
     if (validationInput!==true){
+        Logger.info('error director id at controller')
         res.statusMessage=`Bad Request: ${validationInput.toString()}`;
         res.status(400).send();
         return;
