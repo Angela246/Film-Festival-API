@@ -22,14 +22,14 @@ const getReviews = async (req: Request, res: Response): Promise<void> => {
 }
 
 const addReview = async (req: Request, res: Response): Promise<void> => {
-    const token= req.header("X-Authorization");
-    const validationInput =await validation.validate (schema.film_review_post,req.body);
-    if (validationInput!==true){
-        res.statusMessage=`Bad Request: ${validationInput.toString()}`;
-        res.status(400).send();
-        return;
-    }
     try{
+        const token= req.header("X-Authorization");
+        const validationInput =await validation.validate (schema.film_review_post,req.body);
+        if (validationInput!==true){
+            res.statusMessage=`Bad Request: ${validationInput.toString()}`;
+            res.status(400).send();
+            return;
+        }
         const result = await reviews.addReviews(req.body.rating, req.body.review, req.params.id,token);
         if (result ===401){
             res.statusMessage = "Unauthorized";

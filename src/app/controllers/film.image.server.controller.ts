@@ -35,9 +35,9 @@ const getImage = async (req: Request, res: Response): Promise<void> => {
     }
 }
 const setImage = async (req: Request, res: Response): Promise<void> => {
-    const token= req.header("X-Authorization");
-    const contentType = req.headers['content-type'];
     try{
+        const token= req.header("X-Authorization");
+        const contentType = req.headers['content-type'];
         const imageResult = await filmsImage.setFilmImage(req.params.id, req.body, token,contentType)
         if (imageResult ===400){
             res.statusMessage = "Bad Request";

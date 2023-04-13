@@ -5,14 +5,14 @@ import * as validation from '../middleware/validation';
 import * as schema from "../resources/schemas.json";
 
 const viewAll = async (req: Request, res: Response): Promise<void> => {
-    const validationInput = await validation.validate(schema.film_search,req.query);
-    // Logger.info(`count index ${req.query.count}`)
-    if (validationInput!==true){
-        res.statusMessage=`Bad Request: ${validationInput.toString()}`;
-        res.status(400).send();
-        return;
-    }
     try{
+        const validationInput = await validation.validate(schema.film_search,req.query);
+        // Logger.info(`count index ${req.query.count}`)
+        if (validationInput!==true){
+            res.statusMessage=`Bad Request: ${validationInput.toString()}`;
+            res.status(400).send();
+            return;
+        }
         const result = await film.viewAllFilm(req.query);
 
         if (result===400){
@@ -49,14 +49,14 @@ const getOne = async (req: Request, res: Response): Promise<void> => {
 }
 
 const addOne = async (req: Request, res: Response): Promise<void> => {
-    const token= req.header("X-Authorization");
-    const validationInput = await validation.validate( schema.film_post,req.body);
-    if (validationInput!==true){
-        res.statusMessage=`Bad Request: ${validationInput.toString()}`;
-        res.status(400).send();
-        return;
-    }
     try{
+        const token= req.header("X-Authorization");
+        const validationInput = await validation.validate( schema.film_post,req.body);
+        if (validationInput!==true){
+            res.statusMessage=`Bad Request: ${validationInput.toString()}`;
+            res.status(400).send();
+            return;
+        }
         const result = await film.addFilm(token, req.body);
 
         if (result=== 400){
@@ -88,17 +88,17 @@ const addOne = async (req: Request, res: Response): Promise<void> => {
 }
 
 const editOne = async (req: Request, res: Response): Promise<void> => {
-    const token= req.header("X-Authorization");
-    Logger.http(`token is ${req.body.releaseDate}`)
-    const validationInput = await validation.validate( schema.film_patch,req.body);
-    if (validationInput!==true){
-        res.statusMessage=`Bad Request: ${validationInput.toString()}`;
-        res.status(400).send();
-        return;
-    }
-    Logger.http(`testing here`)
 
     try{
+        const token= req.header("X-Authorization");
+        Logger.http(`token is ${req.body.releaseDate}`)
+        const validationInput = await validation.validate( schema.film_patch,req.body);
+        if (validationInput!==true){
+            res.statusMessage=`Bad Request: ${validationInput.toString()}`;
+            res.status(400).send();
+            return;
+        }
+        Logger.http(`testing here`)
         const result = await film.editFilm(token, req.body, req.params.id);
         if (result ===401){
             res.statusMessage = "Unauthorized";
@@ -127,9 +127,9 @@ const editOne = async (req: Request, res: Response): Promise<void> => {
 }
 
 const deleteOne = async (req: Request, res: Response): Promise<void> => {
-    const token= req.header("X-Authorization");
-    Logger.http(`token is ${token}`)
     try{
+        const token= req.header("X-Authorization");
+        Logger.http(`token is ${token}`)
         const result = await film.deleteFilm(token,req.params.id);
         if (result ===401){
             res.statusMessage = "Unauthorized";
